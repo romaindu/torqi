@@ -9,7 +9,7 @@
     void _putc(int c);
     void _puth8(char c);
     void _puth32(int d);
-    void _putm(void *ptr, int size);
+    void _putm(const void *ptr, int size);
     void _puts(const char *s);
 
     #define com_init()          debug_init()

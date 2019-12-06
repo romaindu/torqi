@@ -52,10 +52,10 @@ void _puth32(int d)
     }
 }
 
-void _putm(void *ptr, int size)
+void _putm(const void *ptr, int size)
 {
     int32_t i;
-    uint8_t *p;
+    const uint8_t *p;
 
     while (size > 0) {
         _puth32((int32_t)ptr);

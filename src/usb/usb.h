@@ -10,6 +10,14 @@
 
 #define USB_NUM_ENDPOINTS   2
 
+typedef enum {
+    EP_DISABLED,
+    EP_CONTROL,
+    EP_ISOCHRONOUS,
+    EP_BULK,
+    EP_INTERRUPT,
+} EpType_t;
+
 typedef struct {
     uint8_t  bmRequestType;
     uint8_t  bRequest;
@@ -18,15 +26,41 @@ typedef struct {
     uint16_t wLength;
 } SetupPacket_t;
 
-extern SetupPacket_t setupPacket;
-extern uint8_t epZeroInBuf[USB_EP0_SIZE];
-extern uint8_t epZeroOutBuf[USB_EP0_SIZE];
+typedef struct {
+    const void  *addr;
+    int16_t     idx;
+    int16_t     len;
+} PacketXfer_t;
+
+typedef struct {
+
+} ControlTransfer_t;
+
+#define IS_STANDARD_REQUEST(x)   (!(x & 0x60))
+enum {
+    GET_STATUS = 0,
+    CLEAR_FEATURE = 1,
+    SET_FEATURE = 3,
+    SET_ADDRESS = 5,
+    GET_DESCRIPTOR = 6,
+    GET_CONFIGURATION = 8,
+    SET_CONFIGURATION = 9,
+};
 
 /* Hardware module functions (usbm.c) */
 void usb_init(void);
 void usb_attach(void);
 void usb_poll(void);
+void usb_configure_ep(uint8_t, uint8_t, EpType_t, void *);
+void usb_ep_clr_out(uint8_t);
+void usb_ep_stall(uint8_t);
+void usb_ep_send_in(uint8_t, void *, int16_t);
+void usb_set_address(uint8_t);
 
 /* Protocol related functions (usb.c) */
+void usb_on_reset(void);
+void usb_on_setup_request(void);
+void usb_on_in_xfer(uint8_t);
+void usb_on_out_xfer(uint8_t, uint8_t);
 
 #endif

@@ -22,7 +22,7 @@ SIZE = $(PREFIX)size
 CFLAGS =  -mthumb -march=armv6-m -mcpu=cortex-m0plus -nostartfiles -Werror
 CFLAGS +=  -O2 -D__$(MCU)__ -DDEBUG_MODE
 
-all: $(TARGET)
+all: flash
 
 flash: $(TARGET)
 	openocd -f openocd.cfg -c "program $<; reset; exit"

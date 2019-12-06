@@ -5,7 +5,7 @@
 
 #define USB_EP0_SIZE        64
 
-struct DeviceDescriptor_t
+typedef struct
 {
     uint8_t     bLength;
     uint8_t     bDescriptorType;
@@ -21,9 +21,9 @@ struct DeviceDescriptor_t
     uint8_t     iProduct;
     uint8_t     iSerialNumber;
     uint8_t     bNumConfigurations;
-};
+} __attribute__((packed, aligned(1))) DeviceDescriptor_t;
 
-struct ConfigurationDescriptor_t
+typedef struct
 {
     uint8_t     bLength;
     uint8_t     bDescriptorType;
@@ -33,9 +33,9 @@ struct ConfigurationDescriptor_t
     uint8_t     iConfiguration;
     uint8_t     bmAttributes;
     uint8_t     bMaxPower;
-};
+} __attribute__((packed, aligned(1))) ConfigurationDescriptor_t;
 
-struct InterfaceDescriptor_t
+typedef struct
 {
     uint8_t     bLength;
     uint8_t     bDescriptorType;
@@ -46,9 +46,9 @@ struct InterfaceDescriptor_t
     uint8_t     bInterfaceSubClass;
     uint8_t     bInterfaceProtocol;
     uint8_t     iInterface;
-};
+} __attribute__((packed, aligned(1))) InterfaceDescriptor_t;
 
-struct HIDDescriptor_t
+typedef struct
 {
     uint8_t     bLength;
     uint8_t     bDescriptorType;
@@ -57,9 +57,9 @@ struct HIDDescriptor_t
     uint8_t     bNumHIDDescriptors;
     uint8_t     bReportDescriptorType;
     uint16_t    wReportDescriptorLength;
-};
+} __attribute__((packed, aligned(1))) HIDDescriptor_t;
 
-struct EndpointDescriptor_t
+typedef struct
 {
     uint8_t     bLength;
     uint8_t     bDescriptorType;
@@ -67,24 +67,24 @@ struct EndpointDescriptor_t
     uint8_t     bmAttributes;
     uint16_t    wMaxPacketSize;
     uint8_t     bInterval;
-};
+} __attribute__((packed, aligned(1))) EndpointDescriptor_t;
 
-struct StringDescriptor_t
+typedef struct
 {
     uint8_t     bLength;
     uint8_t     bDescriptorType;
     int16_t     bString[];
-};
+} __attribute__((packed, aligned(1))) StringDescriptor_t;
 
-struct DescriptorList_t {
-    uint16_t        wValue;
-    uint16_t        wIndex;
-    uint8_t         *addr;
-    int16_t         len;
-};
+typedef struct {
+    uint16_t    wValue;
+    uint16_t    wIndex;
+    uint8_t     *addr;
+    int16_t     len;
+} RequestedDesc_t;
 
-extern const struct  DescriptorList_t descriptorList[];
-extern const int8_t DESCRIPTORS_COUNT;
+extern const RequestedDesc_t reqDescList[];
+extern const int8_t  DESCRIPTORS_COUNT;
 
 extern const uint8_t hidReportDescriptor[];
 extern const int16_t HID_REPORT_DESCRIPTOR_SIZE;

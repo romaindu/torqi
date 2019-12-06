@@ -5,7 +5,7 @@
 
 #include "descriptors.h"
 
-const struct DeviceDescriptor_t deviceDescriptor = {
+const DeviceDescriptor_t deviceDescriptor = {
     .bLength                =   18,
     .bDescriptorType        =   0x01,
     .bcdUSB                 =   0x0200,     // USB 2.0
@@ -528,13 +528,15 @@ const uint8_t hidReportDescriptor[] = {
     0xc0,               //    End Collection
 };
 
-const struct Configuration_t {
-    struct ConfigurationDescriptor_t    configuration;
-    struct InterfaceDescriptor_t        interface;
-    struct HIDDescriptor_t              hid;
-    struct EndpointDescriptor_t         ep1in;
-    struct EndpointDescriptor_t         ep1out;
-} configurationDescriptor = {
+typedef struct {
+    ConfigurationDescriptor_t    configuration;
+    InterfaceDescriptor_t        interface;
+    HIDDescriptor_t              hid;
+    EndpointDescriptor_t         ep1in;
+    EndpointDescriptor_t         ep1out;
+} __attribute__((packed, aligned(1))) Configuration_t;
+
+Configuration_t configurationDescriptor = {
 	.configuration = {
 		.bLength                =   9,
 	    .bDescriptorType        =   0x02,
@@ -583,35 +585,32 @@ const struct Configuration_t {
 	},
 };
 
-const struct StringDescriptor_t string0Descriptor = {
+const StringDescriptor_t string0Descriptor = {
     .bLength                =   4,
     .bDescriptorType        =   0x03,
     .bString                =   {0x0409},       // English 0x0409
 };
 
-const struct StringDescriptor_t manufacturerStringDescriptor = {
+const StringDescriptor_t manufacturerStringDescriptor = {
     .bLength                =   32,
     .bDescriptorType        =   0x03,
-    .bString                =   {'D', '\0', 'e', '\0', 'p', '\0', 't', '\0',
-                                 ' ', '\0', 'I', '\0', 'n', '\0', 'd', '\0',
-                                 'u', '\0', 's', '\0', 't', '\0', 'r', '\0',
-                                 'i', '\0', 'e', '\0', 's', '\0',},
+    .bString                =   {'D', 'e', 'p', 't', ' ', 'I', 'n', 'd', 
+                                 'u', 's', 't', 'r', 'i', 'e', 's',},
 };
 
-const struct StringDescriptor_t productStringDescriptor = {
+const StringDescriptor_t productStringDescriptor = {
     .bLength                =   12,
     .bDescriptorType        =   0x03,
-    .bString                =   {'T', '\0', 'o', '\0', 'r', '\0', 'q', '\0',
-                                 'i', '\0',},
+    .bString                =   {'T', 'o', 'r', 'q', 'i',},
 };
 
-const struct StringDescriptor_t serialStringDescriptor = {
+const StringDescriptor_t serialStringDescriptor = {
     .bLength                =   10,
     .bDescriptorType        =   0x03,
-    .bString                =   {'0', '\0', '0', '\0', '0', '\0', '1', '\0',},
+    .bString                =   {'0', '0', '0', '1',},
 };
 
-const struct DescriptorList_t descriptorList[] = {
+const RequestedDesc_t reqDescList[] = {
     {0x0100, 0x0000, (uint8_t *)(&deviceDescriptor),
         sizeof(deviceDescriptor)},
 
@@ -628,6 +627,6 @@ const struct DescriptorList_t descriptorList[] = {
 };
 
 const int8_t DESCRIPTORS_COUNT =
-    (sizeof(descriptorList)/sizeof(struct DescriptorList_t));
+    (sizeof(reqDescList)/sizeof(RequestedDesc_t));
 
 const int16_t HID_REPORT_DESCRIPTOR_SIZE = sizeof(hidReportDescriptor);
