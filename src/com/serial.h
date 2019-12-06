@@ -1,13 +1,15 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
+#include "samd21.h"
+
 #ifdef DEBUG_MODE
 
     void debug_init(void);
     void _putc(int c);
     void _puth8(char c);
     void _puth32(int d);
-    void _putm(int *ptr, int size);
+    void _putm(void *ptr, int size);
     void _puts(const char *s);
 
     #define com_init()          debug_init()

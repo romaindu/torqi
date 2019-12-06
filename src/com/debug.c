@@ -6,8 +6,6 @@
 
 #include "serial.h"
 
-#include "samd21.h"
-
 void debug_init(void)
 {
     SERCOM3->USART.CTRLA.bit.SWRST = 1;
@@ -54,9 +52,10 @@ void _puth32(int d)
     }
 }
 
-void _putm(int *ptr, int size)
+void _putm(void *ptr, int size)
 {
-    int *p, i;
+    int32_t i;
+    uint8_t *p;
 
     while (size > 0) {
         _puth32((int32_t)ptr);

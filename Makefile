@@ -8,6 +8,7 @@ src/setup.c \
 src/com/debug.c \
 src/usb/usbm.c \
 src/usb/usb.c \
+src/usb/descriptors.c \
 src/main.c
 
 INC = \
@@ -18,7 +19,7 @@ INC = \
 PREFIX = arm-none-eabi-
 CC = $(PREFIX)gcc
 SIZE = $(PREFIX)size
-CFLAGS =  -mthumb -march=armv6-m -mcpu=cortex-m0plus -nostdlib -Werror
+CFLAGS =  -mthumb -march=armv6-m -mcpu=cortex-m0plus -nostartfiles -Werror
 CFLAGS +=  -O2 -D__$(MCU)__ -DDEBUG_MODE
 
 all: $(TARGET)

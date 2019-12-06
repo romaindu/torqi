@@ -1,7 +1,7 @@
 MEMORY
 {
-	FLASH (rx)  : ORIGIN = 0x00000000, LENGTH = 256K
-	SRAM  (rwx) : ORIGIN = 0x20000000, LENGTH = 32K
+	FLASH (rx)  : ORIGIN = 0x00000000, LENGTH = 64K
+	SRAM  (rwx) : ORIGIN = 0x20000000, LENGTH = 8K
 }
 
 SECTIONS
@@ -11,7 +11,7 @@ SECTIONS
 		LONG( ORIGIN(SRAM) + LENGTH(SRAM) )
 		*(.vectors)
 		*(.text)
-		*(.text.startup)
+		*(.text.*)
 		*(.rodata)
 		__etext = ALIGN(4) ;
 	} > FLASH
