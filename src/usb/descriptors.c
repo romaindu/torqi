@@ -13,8 +13,8 @@ const DeviceDescriptor_t deviceDescriptor = {
     .bDeviceSubClass        =   0,          // Interface defined
     .bDeviceProtocol        =   0,          // Interface defined
     .bMaxPacketSize         =   USB_EP0_SIZE,
-    .idVendor               =   0x16C0,
-    .idProduct              =   0x04DB,
+    .idVendor               =   0x2000,
+    .idProduct              =   0x2000,
     .bcdDevice              =   0x0030,     // v0.3
     .iManufacturer          =   1,
     .iProduct               =   2,
@@ -624,6 +624,8 @@ const RequestedDesc_t reqDescList[] = {
     {0x0302, 0x0409, (uint8_t *)(&productStringDescriptor), 12},
 
     {0x0303, 0x0409, (uint8_t *)(&serialStringDescriptor), 10},
+
+    {0x2200, 0x0000, (uint8_t *)(&hidReportDescriptor), sizeof(hidReportDescriptor)},
 };
 
 const int8_t DESCRIPTORS_COUNT =

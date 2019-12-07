@@ -24,7 +24,7 @@ typedef struct {
     uint16_t wValue;
     uint16_t wIndex;
     uint16_t wLength;
-} SetupPacket_t;
+} __attribute__((packed, aligned(1))) SetupPacket_t;
 
 typedef struct {
     const void  *addr;
@@ -48,19 +48,20 @@ enum {
 };
 
 /* Hardware module functions (usbm.c) */
-void usb_init(void);
-void usb_attach(void);
-void usb_poll(void);
-void usb_configure_ep(uint8_t, uint8_t, EpType_t, void *);
-void usb_ep_clr_out(uint8_t);
-void usb_ep_stall(uint8_t);
-void usb_ep_send_in(uint8_t, void *, int16_t);
-void usb_set_address(uint8_t);
+void usbm_init(void);
+void usbm_attach(void);
+void usbm_poll(void);
+void usbm_configure_ep(uint8_t, uint8_t, EpType_t, void *);
+void usbm_ep_clr_out(uint8_t);
+void usbm_ep_stall(uint8_t);
+void usbm_ep_send_in(uint8_t, int16_t);
+void usbm_set_address(uint8_t);
 
 /* Protocol related functions (usb.c) */
 void usb_on_reset(void);
 void usb_on_setup_request(void);
 void usb_on_in_xfer(uint8_t);
 void usb_on_out_xfer(uint8_t, uint8_t);
+void usb_set_configuration(uint16_t);
 
 #endif
