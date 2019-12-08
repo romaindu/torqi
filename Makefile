@@ -8,7 +8,9 @@ src/setup.c \
 src/com/debug.c \
 src/usb/usbm.c \
 src/usb/usb.c \
+src/usb/hid.c \
 src/usb/descriptors.c \
+src/ffb/ffb.c \
 src/main.c
 
 INC = \

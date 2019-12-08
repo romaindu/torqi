@@ -1,8 +1,6 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#include "samd21.h"
-
 #ifdef DEBUG_MODE
 
     void debug_init(void);

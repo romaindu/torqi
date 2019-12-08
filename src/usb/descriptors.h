@@ -5,6 +5,12 @@
 
 #define USB_EP0_SIZE        64
 
+#define HID_INTERFACE_NUM   0
+#define HID_EP_IN_ADDR      0x81
+#define HID_EP_IN_SIZE      16
+#define HID_EP_OUT_ADDR     0x01
+#define HID_EP_OUT_SIZE     16
+
 typedef struct
 {
     uint8_t     bLength;

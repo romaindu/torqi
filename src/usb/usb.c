@@ -6,13 +6,29 @@
 
 #include "usb.h"
 
-#define MIN(a, b)   ((a < b)?(a):(b))
+#include <string.h>
+#include "com/serial.h"
+#include "descriptors.h"
+#include "hid.h"
 
-SetupPacket_t setupPacket;
-PacketXfer_t  controlXfer;
-uint8_t epZeroInBuf[USB_EP0_SIZE];
-uint8_t epZeroOutBuf[USB_EP0_SIZE];
-uint16_t usbConfiguration = 0;
+#define MIN(a, b)   ((a < b)?(a):(b))
+#define IS_STANDARD_REQUEST(x)   (!((x) & 0x60))
+
+enum {
+    GET_STATUS = 0,
+    CLEAR_FEATURE = 1,
+    SET_FEATURE = 3,
+    SET_ADDRESS = 5,
+    GET_DESCRIPTOR = 6,
+    GET_CONFIGURATION = 8,
+    SET_CONFIGURATION = 9,
+};
+
+static SetupPacket_t setupPacket;
+static PacketXfer_t  controlXfer;
+static uint8_t epZeroInBuf[USB_EP0_SIZE];
+static uint8_t epZeroOutBuf[USB_EP0_SIZE];
+static uint16_t usbConfiguration = 0;
 
 RequestedDesc_t const * descriptor_get_requested(
     uint16_t wValue, uint16_t wIndex)
@@ -40,16 +56,16 @@ void ep0_send_next_packet(void)
         /* There is still data to send */
         bc = MIN(USB_EP0_SIZE, rem);
         memcpy(epZeroInBuf, controlXfer.addr + controlXfer.idx, bc);
-        usbm_ep_send_in(0, bc);
+        usbm_ep_send_in(0x80, bc);
         controlXfer.idx += USB_EP0_SIZE;
     }
     else {
         if (rem == 0) {
             /* The data was a multiple of the endpoint size -> send ZLP */
-            usbm_ep_send_in(0, 0);
+            usbm_ep_send_in(0x80, 0);
         }
         /* This packet is over */
-        usbm_ep_clr_out(0);
+        usbm_ep_clr_out(0x00);
     }
 }
 
@@ -77,21 +93,19 @@ void usb_on_setup_request(void)
     if (IS_STANDARD_REQUEST(setupPacket.bmRequestType)) {
         switch (setupPacket.bRequest) {
             case GET_STATUS:
-                puts("GET_STATUS\n");
-                break;
-            case CLEAR_FEATURE:
-                puts("CLEAR_FEATURE\n");
-                break;
-            case SET_FEATURE:
-                puts("SET_FEATURE\n");
+                puts("USB: GET_STATUS\n");
+                epZeroInBuf[0] = 0;
+                epZeroInBuf[1] = 0;
+                usbm_ep_send_in(0x80, 2);
+                usbm_ep_clr_out(0x00);
                 break;
             case SET_ADDRESS:
-                puts("SET_ADDRESS\n");
-                usbm_ep_send_in(0, 0);
-                usbm_ep_clr_out(0);
+                puts("USB: SET_ADDRESS\n");
+                usbm_ep_send_in(0x80, 0);
+                usbm_ep_clr_out(0x00);
                 break;
             case GET_DESCRIPTOR:
-                puts("GET_DESCRIPTOR\n");
+                puts("USB: GET_DESCRIPTOR\n");
                 reqDesc = descriptor_get_requested(wValue, wIndex);
                 if (reqDesc) {
                     controlXfer.addr = reqDesc->addr;
@@ -99,29 +113,32 @@ void usb_on_setup_request(void)
                     controlXfer.len = MIN(wLength, reqDesc->len);
                     ep0_send_next_packet();
                 } else {
-                    puts("ERROR: No descriptor found.\n");
+                    puts("USB: ERROR: Descriptor not found.\n");
                     usbm_ep_stall(0x80);
                 }
                 break;
             case GET_CONFIGURATION:
-                puts("GET_CONFIGURATION\n");
+                puts("USB: GET_CONFIGURATION\n");
+                epZeroInBuf[0] = usbConfiguration;
+                usbm_ep_send_in(0x80, 1);
+                usbm_ep_clr_out(0x00);
                 break;
             case SET_CONFIGURATION:
-                puts("SET_CONFIGURATION\n");
-                usb_set_configuration(wValue);
-                usbm_ep_send_in(0, 0);
-                usbm_ep_clr_out(0);
+                puts("USB: SET_CONFIGURATION\n");
+                usbConfiguration = wValue;
+                hid_configure(wValue);
+                usbm_ep_send_in(0x80, 0);
+                usbm_ep_clr_out(0x00);
                 break;
             default:
-                puts("ERROR: UNHANDLED STANDARD REQUEST.\n");
-                usbm_ep_clr_out(0);
+                puts("USB: ERROR: UNHANDLED STANDARD REQUEST.\n");
+                usbm_ep_stall(0x00);
+                usbm_ep_stall(0x80);
                 break;
         }
     }
     else {
-        puts("ERROR: NON STANDARD REQUEST.\n");
-        usbm_ep_clr_out(0);
-        usbm_ep_send_in(0, 0);
+        hid_on_setup_request(setupPacket);
     }
 }
 
@@ -137,9 +154,12 @@ void usb_on_in_xfer(uint8_t ep)
                 break;
         }
     }
+    else {
+        hid_on_in_xfer(ep);
+    }
 }
 
 void usb_on_out_xfer(uint8_t ep, uint8_t bc)
 {
-
+    hid_on_out_xfer(ep, bc);
 }

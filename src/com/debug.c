@@ -6,6 +6,8 @@
 
 #include "serial.h"
 
+#include "samd21.h"
+
 void debug_init(void)
 {
     SERCOM3->USART.CTRLA.bit.SWRST = 1;

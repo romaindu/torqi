@@ -6,6 +6,9 @@
 
 #include "usb.h"
 
+#include "com/serial.h"
+#include "samd21.h"
+
 #define EP_MASK     0x7
 
 UsbDeviceDescriptor USBEP[USB_NUM_ENDPOINTS];
@@ -70,10 +73,10 @@ void usbm_ep_stall(uint8_t ep)
         USB->DEVICE.DeviceEndpoint[ep & EP_MASK].EPSTATUSSET.bit.STALLRQ0 = 1;
 }
 
-void usbm_ep_send_in(uint8_t ep, int16_t len)
+void usbm_ep_send_in(uint8_t ep, int16_t bc)
 {
     ep &= EP_MASK;
-    USBEP[ep].DeviceDescBank[1].PCKSIZE.bit.BYTE_COUNT = len;
+    USBEP[ep].DeviceDescBank[1].PCKSIZE.bit.BYTE_COUNT = bc;
     //USB->DEVICE.DeviceEndpoint[ep].EPINTFLAG.reg = USB_DEVICE_EPINTFLAG_TRCPT1;
     USB->DEVICE.DeviceEndpoint[ep].EPSTATUSSET.reg = USB_DEVICE_EPSTATUS_BK1RDY;
 }
@@ -86,14 +89,14 @@ void usbm_set_address(uint8_t addr)
 void usbm_poll(void)
 {
     if (USB->DEVICE.INTFLAG.bit.EORST) {
-        puts("USB: EOR\n");
+        puts("USBM: EOR\n");
         usb_on_reset();
         USB->DEVICE.INTFLAG.reg = USB_DEVICE_INTFLAG_EORST;
     }
     else {
         /* Handle control requests */
         if (USB->DEVICE.DeviceEndpoint[0].EPINTFLAG.bit.RXSTP) {
-            puts("USB: EP0 RXSTP\n");
+            puts("USBM: EP0 RXSTP\n");
             USB->DEVICE.DeviceEndpoint[0].EPINTFLAG.reg =
                 USB_DEVICE_EPINTFLAG_RXSTP;
             usb_on_setup_request();
@@ -101,14 +104,14 @@ void usbm_poll(void)
         /* Handle completed transfers events */
         for (int ep = 0; ep < USB_NUM_ENDPOINTS; ++ep) {
             if (USB->DEVICE.DeviceEndpoint[ep].EPINTFLAG.bit.TRCPT0) {
-                puts("USB: EPn TRCPT0 OUT\n");
+                puts("USBM: EPn TRCPT0 OUT\n");
                 USB->DEVICE.DeviceEndpoint[ep].EPINTFLAG.reg = 
                     USB_DEVICE_EPINTFLAG_TRCPT0;
                 uint8_t bc = USBEP[ep].DeviceDescBank[0].PCKSIZE.bit.BYTE_COUNT;
                 usb_on_out_xfer(ep, bc);
             }
             else if (USB->DEVICE.DeviceEndpoint[ep].EPINTFLAG.bit.TRCPT1) {
-                puts("USB: EPn TRCPT1 IN\n");
+                puts("USBM: EPn TRCPT1 IN\n");
                 USB->DEVICE.DeviceEndpoint[ep].EPINTFLAG.reg = 
                     USB_DEVICE_EPINTFLAG_TRCPT1;
                 usb_on_in_xfer(ep | 0x80);

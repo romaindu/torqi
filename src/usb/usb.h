@@ -2,12 +2,8 @@
 #define USB_H
 
 #include <stdint.h>
-#include <string.h>
 
-#include "com/serial.h"
-#include "descriptors.h"
-#include "samd21.h"
-
+/* Affects the RAM usage, max 8 (device limited) */
 #define USB_NUM_ENDPOINTS   2
 
 typedef enum {
@@ -36,32 +32,20 @@ typedef struct {
 
 } ControlTransfer_t;
 
-#define IS_STANDARD_REQUEST(x)   (!(x & 0x60))
-enum {
-    GET_STATUS = 0,
-    CLEAR_FEATURE = 1,
-    SET_FEATURE = 3,
-    SET_ADDRESS = 5,
-    GET_DESCRIPTOR = 6,
-    GET_CONFIGURATION = 8,
-    SET_CONFIGURATION = 9,
-};
-
 /* Hardware module functions (usbm.c) */
 void usbm_init(void);
 void usbm_attach(void);
 void usbm_poll(void);
-void usbm_configure_ep(uint8_t, uint8_t, EpType_t, void *);
-void usbm_ep_clr_out(uint8_t);
-void usbm_ep_stall(uint8_t);
-void usbm_ep_send_in(uint8_t, int16_t);
-void usbm_set_address(uint8_t);
+void usbm_configure_ep(uint8_t ep, uint8_t size, EpType_t type, void *buf);
+void usbm_ep_clr_out(uint8_t ep);
+void usbm_ep_stall(uint8_t ep);
+void usbm_ep_send_in(uint8_t ep, int16_t bc);
+void usbm_set_address(uint8_t addr);
 
 /* Protocol related functions (usb.c) */
 void usb_on_reset(void);
 void usb_on_setup_request(void);
-void usb_on_in_xfer(uint8_t);
-void usb_on_out_xfer(uint8_t, uint8_t);
-void usb_set_configuration(uint16_t);
+void usb_on_in_xfer(uint8_t ep);
+void usb_on_out_xfer(uint8_t ep, uint8_t bc);
 
 #endif

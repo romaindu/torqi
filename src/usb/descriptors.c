@@ -550,7 +550,7 @@ Configuration_t configurationDescriptor = {
 	.interface = {
 		.bLength                =   9,
 	    .bDescriptorType        =   0x04,
-	    .bInterfaceNumber       =   0,
+	    .bInterfaceNumber       =   HID_INTERFACE_NUM,
 	    .bAlternateSetting      =   0,
 	    .bNumEndpoints          =   2,
 	    .bInterfaceClass        =   0x03,       // HID Device
@@ -570,18 +570,18 @@ Configuration_t configurationDescriptor = {
 	.ep1in = {
 		.bLength                =   7,
 	    .bDescriptorType        =   0x05,
-	    .bEndpointAdress        =   0x81,       // IN, addr = 1
-	    .bmAttributes           =   0b11,       // Interrupt endpoint
-	    .wMaxPacketSize         =   0x0010,     // 16 bytes
-	    .bInterval              =   0x01,       // 1 ms
+	    .bEndpointAdress        =   HID_EP_IN_ADDR,    // IN, addr = 1
+	    .bmAttributes           =   0b11,              // Interrupt endpoint
+	    .wMaxPacketSize         =   HID_EP_IN_SIZE,    // 16 bytes
+	    .bInterval              =   0x01,              // 1 ms
 	},
 	.ep1out = {
 		.bLength                =   7,
 	    .bDescriptorType        =   0x05,
-	    .bEndpointAdress        =   0x01,       // OUT, addr = 1
-	    .bmAttributes           =   0b11,       // Interrupt endpoint
-	    .wMaxPacketSize         =   0x0010,     // 16 bytes
-	    .bInterval              =   0x01,       // 1 ms
+	    .bEndpointAdress        =   HID_EP_OUT_ADDR,   // OUT, addr = 1
+	    .bmAttributes           =   0b11,              // Interrupt endpoint
+	    .wMaxPacketSize         =   HID_EP_OUT_SIZE,   // 16 bytes
+	    .bInterval              =   0x01,              // 1 ms
 	},
 };
 
