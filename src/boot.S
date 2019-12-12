@@ -74,12 +74,7 @@ _crt0:
 	str 	r0, [r1]
 	add		r1, #4
 	b 		2b
-3:	/* Setup hardware */
-	ldr		r0, =setup_clocks
-	blx		r0
-	ldr		r0, =setup_ports
-	blx		r0
-	/* Branch to main */
+3:	/* Branch to main */
 	ldr		r0, =main
 	blx		r0
 	b 		.

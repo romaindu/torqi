@@ -4,22 +4,24 @@
  * @author: Romain Durand
 */
 
-#include "samd21.h"
-
-#include "com/serial.h"
-#include "usb/usb.h"
+#include "setup.h"
 
 int main(void)
 {
-    com_init();
-    usbm_init();
-    
-    usbm_attach();
+    setup_clocks();
+    setup_init();
+    setup_ports();
 
     puts("\n\n======== Restarting ========\n");
+    PORT->Group[1].DIRSET.reg = (1 << 30);
 
     for (;;) {
-        usbm_poll();
+        mot_enable();
+        PORT->Group[1].OUTCLR.reg = (1 << 30);
+        for (int i = 0; i < 0xffffff; ++i) { __asm__("nop"); }
+        mot_disable();
+        PORT->Group[1].OUTSET.reg = (1 << 30);
+        for (int i = 0; i < 0xffffff; ++i) { __asm__("nop"); }
     }
 
     return 0;
