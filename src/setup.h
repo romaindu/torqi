@@ -53,6 +53,9 @@ void setup_clocks(void)
                         GCLK_GENCTRL_ID(0) +
                         GCLK_GENCTRL_SRC_DFLL48M;
 
+    /* OSC8M is by default divided by 8, divide by 1 */
+    SYSCTRL->OSC8M.bit.PRESC = 0;
+
     /* Set OSC8M as GCLK1 clk source */
     GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN +
                         GCLK_GENCTRL_ID(1) +
@@ -78,11 +81,10 @@ void setup_clocks(void)
 
     /* ADC runs on GCLK1 (8MHz) */
     GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
-                        GCLK_CLKCTRL_GEN_GCLK2 +
+                        GCLK_CLKCTRL_GEN_GCLK1 +
                         GCLK_CLKCTRL_ID_ADC;
     PM->APBCMASK.bit.ADC_ = 1;
 
-    /* EVSYS */
     PM->APBCMASK.bit.EVSYS_ = 1;
 }
 

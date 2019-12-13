@@ -11,7 +11,7 @@
     void _puts(const char *s);
 
     #define com_init()          debug_init()
-    #define puts(str)           _puts(__extension__({static const int8_t debug_str[] = str; debug_str;}))
+    #define puts(str)           _puts(str)
     #define putm(ptr,size)      _putm(ptr,size)
     #define putr32(reg)         puts(#reg "=0x"); _puth32(reg); _putc('\n')
 

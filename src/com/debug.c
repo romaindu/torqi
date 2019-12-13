@@ -8,10 +8,20 @@
 
 #include "samd21.h"
 
+void _putc(int c)
+{
+    while (!(SERCOM3->USART.INTFLAG.bit.DRE));
+    SERCOM3->USART.DATA.reg = c;
+}
+
+void _puts(const char *s)
+{
+    while (*s) _putc(*s++);
+}
+
 void debug_init(void)
 {
     SERCOM3->USART.CTRLA.bit.SWRST = 1;
-
     while (SERCOM3->USART.SYNCBUSY.bit.SWRST);
 
     /* Configure a 250000 baud TX only UART */
@@ -22,17 +32,6 @@ void debug_init(void)
                                 SERCOM_USART_CTRLA_ENABLE;
 
     while (SERCOM3->USART.SYNCBUSY.bit.ENABLE);
-}
-
-inline void _putc(int c)
-{
-    while (!(SERCOM3->USART.INTFLAG.bit.DRE));
-    SERCOM3->USART.DATA.reg = c;
-}
-
-inline void _puts(const char *s)
-{
-    while (*s) _putc(*s++);
 }
 
 void _puth8(char c)

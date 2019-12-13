@@ -13,6 +13,7 @@ SECTIONS
 		*(.text)
 		*(.text.*)
 		*(.rodata)
+		*(.rodata.*)
 		__etext = ALIGN(4) ;
 	} > FLASH
 
