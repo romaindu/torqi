@@ -11,10 +11,10 @@
 #include "core_cm0plus.h"
 #include "com/serial.h"
 
-static const uint8_t  PWM_RES = 10;
-static const uint16_t PWM_DT  = 0;
-static const uint16_t PWM_MIN = 100;
-static const uint8_t  ADC_SMPT = 3;
+static const uint8_t  PWM_RES = 9;
+static const uint16_t PWM_DT  = 30;
+static const uint16_t PWM_MIN = 48;
+static const uint8_t  ADC_SMPT = 1;
 
 static uint32_t fixedpt_to_ures(int32_t pwm, uint8_t res)
 {
@@ -62,15 +62,13 @@ void mot_init(void)
     TCC0->CTRLA.bit.SWRST = 1;
     while (TCC0->SYNCBUSY.bit.SWRST);
 
-    per = 1 << (PWM_RES-1);
+    per = 1 << (PWM_RES);
 
     TCC0->PER.bit.PER  = per;
-    TCC0->CC[0].bit.CC = per/2;
-    TCC0->CC[1].bit.CC = 90;
-    TCC0->CC[2].bit.CC = per/2;
-    TCC0->CC[3].bit.CC = 1+PWM_DT;
-    TCC0->WAVE.reg = TCC_WAVE_WAVEGEN_DSCRITICAL + TCC_WAVE_RAMP_RAMP1 +
-                     TCC_WAVE_POL(0b1111) + TCC_WAVE_SWAP(0b0000);
+    TCC0->CC[0].bit.CC = PWM_MIN;
+    TCC0->CC[1].bit.CC = per/2;
+    TCC0->WAVE.reg = TCC_WAVE_WAVEGEN_DSBOTTOM + TCC_WAVE_RAMP_RAMP1 +
+                     TCC_WAVE_POL(0b1111) + TCC_WAVE_SWAP(0b1100);
     TCC0->WEXCTRL.reg = TCC_WEXCTRL_OTMX(1) + TCC_WEXCTRL_DTIEN(0xf) +
                         TCC_WEXCTRL_DTLS(PWM_DT) + TCC_WEXCTRL_DTHS(PWM_DT);
     TCC0->DRVCTRL.reg = TCC_DRVCTRL_INVEN(0xf0) +
