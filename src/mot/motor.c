@@ -17,7 +17,7 @@
 
 #define PWM_DT          30
 #define PWM_MIN         48
-#define ADC_SMPT        3
+#define ADC_SMPT        1
 
 void motor_init(void)
 {
@@ -104,7 +104,7 @@ static uint32_t pwm_to_count(int32_t pwm)
     else
         u = (uint32_t)pwm + 0x80000000U;
 
-    u >>= 24;
+    u >>= 23;
 
     if (u < PWM_MIN)
         u = PWM_MIN;
@@ -114,8 +114,6 @@ static uint32_t pwm_to_count(int32_t pwm)
     return u;
 }
 
-extern volatile uint32_t adc4;
-
 void ADC_Handler(void)
 {
     int32_t pwm;
@@ -124,7 +122,6 @@ void ADC_Handler(void)
 
     if (ADC->INPUTCTRL.bit.MUXPOS == PHASE_A_ADC_IN) {
         pwm = controller_compute_pwm(PHASE_A, ADC->RESULT.reg);
-        adc4 = ADC->RESULT.reg;
         TCC0->CCB[0].bit.CCB = pwm_to_count(pwm);
         ADC->INPUTCTRL.bit.MUXPOS = PHASE_B_ADC_IN;
     }
