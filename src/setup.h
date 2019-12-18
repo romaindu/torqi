@@ -7,7 +7,7 @@
 #include "samd21.h"
 
 #include "com/serial.h"
-#include "mot/mot.h"
+#include "mot/motor.h"
 #include "usb/usb.h"
 
 void setup_clocks(void)
@@ -91,7 +91,7 @@ void setup_clocks(void)
 void setup_init(void)
 {
     com_init();
-    mot_init();
+    motor_init();
 }
 
 static inline void pin_mux_wrconfig(const int pinmux)

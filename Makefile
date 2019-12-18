@@ -10,7 +10,8 @@ src/usb/usb.c \
 src/usb/hid.c \
 src/usb/descriptors.c \
 src/ffb/ffb.c \
-src/mot/mot.c \
+src/mot/motor.c \
+src/mot/controller.c \
 src/main.c
 
 INC = \
@@ -24,7 +25,7 @@ SIZE = $(PREFIX)size
 CFLAGS =  -mthumb -march=armv6-m -mcpu=cortex-m0plus -nostartfiles -Werror
 CFLAGS += -D__$(MCU)__ -DDEBUG_MODE
 
-all: flash
+all: $(TARGET)
 
 flash: $(TARGET)
 	openocd -f openocd.cfg -c "program $<; reset; exit"

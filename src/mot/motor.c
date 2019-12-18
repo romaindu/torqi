@@ -4,56 +4,22 @@
  * @author: Romain Durand
 */
 
-#include "mot.h"
+#include "motor.h"
 
 #include <stdint.h>
 #include "samd21.h"
 #include "core_cm0plus.h"
 #include "com/serial.h"
+#include "controller.h"
 
-static const uint8_t  PWM_RES = 9;
-static const uint16_t PWM_DT  = 30;
-static const uint16_t PWM_MIN = 48;
-static const uint8_t  ADC_SMPT = 1;
+#define PHASE_A_ADC_IN  4
+#define PHASE_B_ADC_IN  5
 
-static uint32_t fixedpt_to_ures(int32_t pwm, uint8_t res)
-{
-    uint32_t u;
+#define PWM_DT          30
+#define PWM_MIN         48
+#define ADC_SMPT        3
 
-    if (pwm < 0)
-        u = (uint32_t)pwm - 0x80000000U;
-    else
-        u = (uint32_t)pwm + 0x80000000U;
-
-    return u >> (32 - res);
-}
-
-static uint32_t split_cycle(uint32_t pwm, uint32_t lmin, uint32_t rmin)
-{
-    uint32_t r;
-
-    if (pwm < lmin)
-        r = lmin;
-    else if (pwm > rmin)
-        r = rmin;
-    else
-        r = pwm;
-
-    return r; 
-}
-
-void mot_pwm(uint32_t pwm)
-{
-    uint32_t a, b, u;
-
-    u = fixedpt_to_ures(pwm, PWM_RES);
-    putr32(u);
-
-    //TCC0->CCB[1].bit.CC = 
-    //TCC0->CCB[3].bit.CC = 
-}
-
-void mot_init(void)
+void motor_init(void)
 {
     uint32_t lin0, lin1, bias;
     uint32_t per;
@@ -62,10 +28,10 @@ void mot_init(void)
     TCC0->CTRLA.bit.SWRST = 1;
     while (TCC0->SYNCBUSY.bit.SWRST);
 
-    per = 1 << (PWM_RES);
+    per = 512;
 
     TCC0->PER.bit.PER  = per;
-    TCC0->CC[0].bit.CC = PWM_MIN;
+    TCC0->CC[0].bit.CC = per/2;
     TCC0->CC[1].bit.CC = per/2;
     TCC0->WAVE.reg = TCC_WAVE_WAVEGEN_DSBOTTOM + TCC_WAVE_RAMP_RAMP1 +
                      TCC_WAVE_POL(0b1111) + TCC_WAVE_SWAP(0b1100);
@@ -116,21 +82,55 @@ void mot_init(void)
                          EVSYS_CHANNEL_PATH_ASYNCHRONOUS;
 }
 
-void mot_disable(void)
+void motor_disable(void)
 {
     TCC0->CTRLA.bit.ENABLE = 0;
     while (TCC0->SYNCBUSY.bit.ENABLE);
 }
 
-void mot_enable(void)
+void motor_enable(void)
 {
     TCC0->CTRLA.bit.ENABLE = 1;
     while (TCC0->SYNCBUSY.bit.ENABLE);
 }
 
+static uint32_t pwm_to_count(int32_t pwm)
+{
+    uint32_t u;
+    uint32_t max = 512 - PWM_MIN;
+
+    if (pwm < 0)
+        u = (uint32_t)pwm - 0x80000000U;
+    else
+        u = (uint32_t)pwm + 0x80000000U;
+
+    u >>= 24;
+
+    if (u < PWM_MIN)
+        u = PWM_MIN;
+    else if (u > max)
+        u = max;
+
+    return u;
+}
+
+extern volatile uint32_t adc4;
+
 void ADC_Handler(void)
 {
-    PORT->Group[1].OUTSET.reg = (1 << 17);
+    int32_t pwm;
+
     ADC->INTFLAG.reg = ADC_INTFLAG_RESRDY;
-    PORT->Group[1].OUTCLR.reg = (1 << 17);
+
+    if (ADC->INPUTCTRL.bit.MUXPOS == PHASE_A_ADC_IN) {
+        pwm = controller_compute_pwm(PHASE_A, ADC->RESULT.reg);
+        adc4 = ADC->RESULT.reg;
+        TCC0->CCB[0].bit.CCB = pwm_to_count(pwm);
+        ADC->INPUTCTRL.bit.MUXPOS = PHASE_B_ADC_IN;
+    }
+    else {
+        pwm = controller_compute_pwm(PHASE_B, ADC->RESULT.reg);
+        TCC0->CCB[1].bit.CCB = pwm_to_count(pwm);
+        ADC->INPUTCTRL.bit.MUXPOS = PHASE_A_ADC_IN;
+    }
 }

@@ -6,7 +6,9 @@
 
 #include "setup.h"
 
-void mot_pwm(uint32_t pwm);
+#include "mot/controller.h"
+
+volatile uint32_t adc4;
 
 int main(void)
 {
@@ -16,14 +18,15 @@ int main(void)
 
     puts("\n\n=============== DEBUG ENABLED ===============\n");
 
-    PORT->Group[1].DIRSET.reg = (1 << 17) + (1 << 30);
-    mot_enable();
+    controller_set_current(0, 2100);
+    controller_set_current(0, 2048);
+    motor_enable();
+
+    static uint32_t a;
 
     for (;;) {
-        //mot_enable();
-        //for (int i = 0; i < 0xffffff; ++i) { __asm__("nop"); }
-        //mot_disable();
-        //for (int i = 0; i < 0xffffff; ++i) { __asm__("nop"); }
+    	a = adc4;
+    	putr32(a);
     }
 
     return 0;
