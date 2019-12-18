@@ -3,12 +3,11 @@
 
 #include <stdint.h>
 
-enum {
-	PHASE_A,
-	PHASE_B,
+struct pi_controller {
+    int32_t out;
+    int32_t vec[2];
 };
 
-int32_t controller_compute_pwm(int32_t ph, int32_t adc);
-void controller_set_current(int32_t ph, int32_t tg);
+int32_t controller_compute(struct pi_controller *pic, int32_t err);
 
 #endif

@@ -19,6 +19,9 @@
 #define PWM_MIN         48
 #define ADC_SMPT        1
 
+struct pi_controller pha, phb;
+volatile int32_t ipha = 2048, iphb = 2048;
+
 void motor_init(void)
 {
     uint32_t lin0, lin1, bias;
@@ -94,7 +97,7 @@ void motor_enable(void)
     while (TCC0->SYNCBUSY.bit.ENABLE);
 }
 
-static uint32_t pwm_to_count(int32_t pwm)
+static uint32_t map_timer_count(int32_t pwm)
 {
     uint32_t u;
     uint32_t max = 512 - PWM_MIN;
@@ -116,18 +119,20 @@ static uint32_t pwm_to_count(int32_t pwm)
 
 void ADC_Handler(void)
 {
-    int32_t pwm;
+    int32_t pwm, err;
 
     ADC->INTFLAG.reg = ADC_INTFLAG_RESRDY;
 
     if (ADC->INPUTCTRL.bit.MUXPOS == PHASE_A_ADC_IN) {
-        pwm = controller_compute_pwm(PHASE_A, ADC->RESULT.reg);
-        TCC0->CCB[0].bit.CCB = pwm_to_count(pwm);
+        err = ipha - ADC->RESULT.reg;
+        pwm = controller_compute(&pha, err);
+        TCC0->CCB[0].bit.CCB = map_timer_count(pwm);
         ADC->INPUTCTRL.bit.MUXPOS = PHASE_B_ADC_IN;
     }
     else {
-        pwm = controller_compute_pwm(PHASE_B, ADC->RESULT.reg);
-        TCC0->CCB[1].bit.CCB = pwm_to_count(pwm);
+        err = iphb - ADC->RESULT.reg;
+        pwm = controller_compute(&phb, err);
+        TCC0->CCB[1].bit.CCB = map_timer_count(pwm);
         ADC->INPUTCTRL.bit.MUXPOS = PHASE_A_ADC_IN;
     }
 }
