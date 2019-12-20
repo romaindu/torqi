@@ -12,6 +12,7 @@ src/usb/descriptors.c \
 src/ffb/ffb.c \
 src/mot/motor.c \
 src/mot/controller.c \
+src/mot/torque.c \
 src/main.c
 
 INC = \

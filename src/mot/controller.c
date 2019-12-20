@@ -6,8 +6,7 @@
 
 #include "controller.h"
 
-#define COEF0 	5122
-#define COEF1 	-5112
+static const int16_t taps[2] = {5122, -5112};
 
 static inline int32_t signed_saturate(int32_t val, int32_t sat)
 {
@@ -34,8 +33,8 @@ int32_t controller_compute(struct pi_controller *pic, int32_t err)
 	pic->vec[1] = pic->vec[0];
 	pic->vec[0] = err;
 
-	pic->out += pic->vec[0]*COEF0;
-	pic->out += pic->vec[1]*COEF1;
+	pic->out += pic->vec[0]*taps[0];
+	pic->out += pic->vec[1]*taps[1];
 
 	pic->out = signed_saturate(pic->out, 21);
 

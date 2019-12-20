@@ -1,16 +1,14 @@
 /*
- * mot.c
+ * motor.c
  *
  * @author: Romain Durand
 */
 
 #include "motor.h"
 
-#include <stdint.h>
 #include "samd21.h"
 #include "core_cm0plus.h"
-#include "com/serial.h"
-#include "controller.h"
+#include "torque.h"
 
 #define PHASE_A_ADC_IN  4
 #define PHASE_B_ADC_IN  5
@@ -19,19 +17,14 @@
 #define PWM_MIN         48
 #define ADC_SMPT        1
 
-struct pi_controller pha, phb;
-volatile int32_t ipha = 2048, iphb = 2048;
-
 void motor_init(void)
 {
     uint32_t lin0, lin1, bias;
-    uint32_t per;
+    const uint32_t per = 512;
 
     /* PWM TIMER */
     TCC0->CTRLA.bit.SWRST = 1;
     while (TCC0->SYNCBUSY.bit.SWRST);
-
-    per = 512;
 
     TCC0->PER.bit.PER  = per;
     TCC0->CC[0].bit.CC = per/2;
@@ -119,19 +112,17 @@ static uint32_t map_timer_count(int32_t pwm)
 
 void ADC_Handler(void)
 {
-    int32_t pwm, err;
+    int32_t pwm;
 
     ADC->INTFLAG.reg = ADC_INTFLAG_RESRDY;
 
     if (ADC->INPUTCTRL.bit.MUXPOS == PHASE_A_ADC_IN) {
-        err = ipha - ADC->RESULT.reg;
-        pwm = controller_compute(&pha, err);
+        pwm = torque_on_adc_sample(PHASE_A, ADC->RESULT.reg);
         TCC0->CCB[0].bit.CCB = map_timer_count(pwm);
         ADC->INPUTCTRL.bit.MUXPOS = PHASE_B_ADC_IN;
     }
     else {
-        err = iphb - ADC->RESULT.reg;
-        pwm = controller_compute(&phb, err);
+        pwm = torque_on_adc_sample(PHASE_B, ADC->RESULT.reg);
         TCC0->CCB[1].bit.CCB = map_timer_count(pwm);
         ADC->INPUTCTRL.bit.MUXPOS = PHASE_A_ADC_IN;
     }
