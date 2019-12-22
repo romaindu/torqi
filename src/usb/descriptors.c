@@ -1,28 +1,49 @@
 /*
  * descriptors.c
+ *
  * @author: Romain Durand
  */
 
-#include "descriptors.h"
+#include "tusb.h"
 
-const DeviceDescriptor_t deviceDescriptor = {
-    .bLength                =   18,
-    .bDescriptorType        =   0x01,
-    .bcdUSB                 =   0x0200,     // USB 2.0
-    .bDeviceClass           =   0,          // Interface defined
-    .bDeviceSubClass        =   0,          // Interface defined
-    .bDeviceProtocol        =   0,          // Interface defined
-    .bMaxPacketSize         =   USB_EP0_SIZE,
-    .idVendor               =   0x2000,
-    .idProduct              =   0x2000,
-    .bcdDevice              =   0x0030,     // v0.3
-    .iManufacturer          =   1,
-    .iProduct               =   2,
-    .iSerialNumber          =   3,
-    .bNumConfigurations     =   1,
+enum
+{
+  ITF_NUM_HID,
+  ITF_NUM_TOTAL
 };
 
-const uint8_t hidReportDescriptor[] = {
+#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
+
+#define EPNUM_HID 0x01
+
+tusb_desc_device_t const desc_device =
+{
+    .bLength            = sizeof(tusb_desc_device_t),
+    .bDescriptorType    = TUSB_DESC_DEVICE,
+    .bcdUSB             = 0x0200,
+    .bDeviceClass       = 0x00,
+    .bDeviceSubClass    = 0x00,
+    .bDeviceProtocol    = 0x00,
+    .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
+
+    .idVendor           = 0x2000,
+    .idProduct          = 0x2005,
+    .bcdDevice          = 0x0100,
+
+    .iManufacturer      = 0x01,
+    .iProduct           = 0x02,
+    .iSerialNumber      = 0x03,
+
+    .bNumConfigurations = 0x01
+};
+
+uint8_t const * tud_descriptor_device_cb(void)
+{
+  return (uint8_t const *) &desc_device;
+}
+
+uint8_t const desc_hid_report[] =
+{
     /* IN 1: WHEEL REPORT */
     0x05,0x01,          //    Usage Page Generic Desktop
     0x09,0x04,          //    Usage Joystick
@@ -528,107 +549,60 @@ const uint8_t hidReportDescriptor[] = {
     0xc0,               //    End Collection
 };
 
-typedef struct {
-    ConfigurationDescriptor_t    configuration;
-    InterfaceDescriptor_t        interface;
-    HIDDescriptor_t              hid;
-    EndpointDescriptor_t         ep1in;
-    EndpointDescriptor_t         ep1out;
-} __attribute__((packed, aligned(1))) Configuration_t;
+uint8_t const * tud_hid_descriptor_report_cb(void)
+{
+  return desc_hid_report;
+}
 
-Configuration_t configurationDescriptor = {
-	.configuration = {
-		.bLength                =   9,
-	    .bDescriptorType        =   0x02,
-	    .wTotalLength           =   9+9+9+7+7,
-	    .bNumInterfaces         =   1,
-	    .bConfigurationValue    =   1,
-	    .iConfiguration         =   0,
-	    .bmAttributes           =   (1 << 7),   // Bus powered
-	    .bMaxPower              =   50,         // 100 mA
-	},
-	.interface = {
-		.bLength                =   9,
-	    .bDescriptorType        =   0x04,
-	    .bInterfaceNumber       =   HID_INTERFACE_NUM,
-	    .bAlternateSetting      =   0,
-	    .bNumEndpoints          =   2,
-	    .bInterfaceClass        =   0x03,       // HID Device
-	    .bInterfaceSubClass     =   0,
-	    .bInterfaceProtocol     =   0,
-	    .iInterface             =   0,
-	},
-	.hid = {
-		.bLength                =   9,
-	    .bDescriptorType        =   0x21,
-	    .bcdHID                 =   0x0111,
-	    .bCountryCode           =   0,
-	    .bNumHIDDescriptors     =   1,
-	    .bReportDescriptorType  =   0x22,
-	    .wReportDescriptorLength=   sizeof(hidReportDescriptor),
-	},
-	.ep1in = {
-		.bLength                =   7,
-	    .bDescriptorType        =   0x05,
-	    .bEndpointAdress        =   HID_EP_IN_ADDR,    // IN, addr = 1
-	    .bmAttributes           =   0b11,              // Interrupt endpoint
-	    .wMaxPacketSize         =   HID_EP_IN_SIZE,    // 16 bytes
-	    .bInterval              =   0x01,              // 1 ms
-	},
-	.ep1out = {
-		.bLength                =   7,
-	    .bDescriptorType        =   0x05,
-	    .bEndpointAdress        =   HID_EP_OUT_ADDR,   // OUT, addr = 1
-	    .bmAttributes           =   0b11,              // Interrupt endpoint
-	    .wMaxPacketSize         =   HID_EP_OUT_SIZE,   // 16 bytes
-	    .bInterval              =   0x01,              // 1 ms
-	},
+uint8_t const desc_configuration[] =
+{
+  // interface count, string index, total length, attribute, power in mA
+  TUD_CONFIG_DESCRIPTOR(ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_SELF_POWERED, 0),
+
+  // Interface number, string index, protocol, report descriptor len, EP In & Out address, size & polling interval
+  TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, HID_PROTOCOL_NONE, sizeof(desc_hid_report), EPNUM_HID, 0x80 | EPNUM_HID, CFG_TUD_HID_BUFSIZE, 1)
 };
 
-const StringDescriptor_t string0Descriptor = {
-    .bLength                =   4,
-    .bDescriptorType        =   0x03,
-    .bString                =   {0x0409},       // English 0x0409
+uint8_t const * tud_descriptor_configuration_cb(uint8_t index)
+{
+  (void) index;
+  return desc_configuration;
+}
+
+char const* string_desc_arr [] =
+{
+  (const char[]) { 0x09, 0x04 }, // 0: English (0x0409)
+  "Dept Industries",             // 1: Manufacturer
+  "Torqi",                       // 2: Product
+  "0001",                        // 3: Serials
 };
 
-const StringDescriptor_t manufacturerStringDescriptor = {
-    .bLength                =   32,
-    .bDescriptorType        =   0x03,
-    .bString                =   {'D', 'e', 'p', 't', ' ', 'I', 'n', 'd', 
-                                 'u', 's', 't', 'r', 'i', 'e', 's',},
-};
+static uint16_t _desc_str[32];
 
-const StringDescriptor_t productStringDescriptor = {
-    .bLength                =   12,
-    .bDescriptorType        =   0x03,
-    .bString                =   {'T', 'o', 'r', 'q', 'i',},
-};
+uint16_t const* tud_descriptor_string_cb(uint8_t index)
+{
+    uint8_t chr_count;
 
-const StringDescriptor_t serialStringDescriptor = {
-    .bLength                =   10,
-    .bDescriptorType        =   0x03,
-    .bString                =   {'0', '0', '0', '1',},
-};
+    if (index == 0) {
+        memcpy(&_desc_str[1], string_desc_arr[0], 2);
+        chr_count = 1;
+    }
+    else {
+        if (!(index < sizeof(string_desc_arr)/sizeof(string_desc_arr[0])))
+            return NULL;
 
-const RequestedDesc_t reqDescList[] = {
-    {0x0100, 0x0000, (uint8_t *)(&deviceDescriptor),
-        sizeof(deviceDescriptor)},
+        const char* str = string_desc_arr[index];
 
-    {0x0200, 0x0000, (uint8_t *)(&configurationDescriptor),
-        sizeof(configurationDescriptor)},
+        chr_count = strlen(str);
 
-    {0x0300, 0x0000, (uint8_t *)(&string0Descriptor), 4},
+        if (chr_count > 31)
+            chr_count = 31;
 
-    {0x0301, 0x0409, (uint8_t *)(&manufacturerStringDescriptor), 32},
+        for(uint8_t i=0; i<chr_count; i++)
+            _desc_str[1+i] = str[i];
+    }
 
-    {0x0302, 0x0409, (uint8_t *)(&productStringDescriptor), 12},
+    _desc_str[0] = (TUSB_DESC_STRING << 8) | (2*chr_count + 2);
 
-    {0x0303, 0x0409, (uint8_t *)(&serialStringDescriptor), 10},
-
-    {0x2200, 0x0000, (uint8_t *)(&hidReportDescriptor), sizeof(hidReportDescriptor)},
-};
-
-const int8_t DESCRIPTORS_COUNT =
-    (sizeof(reqDescList)/sizeof(RequestedDesc_t));
-
-const int16_t HID_REPORT_DESCRIPTOR_SIZE = sizeof(hidReportDescriptor);
+    return _desc_str;
+}

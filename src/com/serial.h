@@ -1,27 +1,25 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#ifdef DEBUG_MODE
+static inline void serial_init(void)
+{
+	#ifdef DEBUG_MODE
 
-    void debug_init(void);
-    void _putc(int c);
-    void _puth8(char c);
-    void _puth32(int d);
-    void _putm(const void *ptr, int size);
-    void _puts(const char *s);
+		SERCOM3->USART.CTRLA.bit.SWRST = 1;
+	    while (SERCOM3->USART.SYNCBUSY.bit.SWRST);
 
-    #define com_init()          debug_init()
-    #define puts(str)           _puts(str)
-    #define putm(ptr,size)      _putm(ptr,size)
-    #define putr32(reg)         puts(#reg "=0x"); _puth32(reg); _putc('\n')
+	    /* Configure a 115200 baud TX only UART */
+	    SERCOM3->USART.BAUD.reg = SERCOM_USART_BAUD_USARTFP_BAUD(63019);
+	    SERCOM3->USART.CTRLB.reg = SERCOM_USART_CTRLB_TXEN;
+	    SERCOM3->USART.CTRLA.reg =  SERCOM_USART_CTRLA_DORD +
+	                                SERCOM_USART_CTRLA_MODE_USART_INT_CLK +
+	                                SERCOM_USART_CTRLA_ENABLE;
 
-#else
+	    while (SERCOM3->USART.SYNCBUSY.bit.ENABLE);
+	    
+	#else
 
-    #define com_init()
-    #define puts(str)
-    #define putm(ptr,size)
-    #define putr32(reg)
-
-#endif
+	#endif
+}
 
 #endif

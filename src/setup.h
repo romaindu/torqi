@@ -4,11 +4,7 @@
  * @author: Romain Durand
 */
 
-#include "samd21.h"
-
-#include "com/serial.h"
-#include "mot/motor.h"
-#include "usb/usb.h"
+#include "sam.h"
 
 void setup_clocks(void)
 {
@@ -86,12 +82,6 @@ void setup_clocks(void)
     PM->APBCMASK.bit.ADC_ = 1;
 
     PM->APBCMASK.bit.EVSYS_ = 1;
-}
-
-void setup_init(void)
-{
-    com_init();
-    motor_init();
 }
 
 static inline void pin_mux_wrconfig(const int pinmux)

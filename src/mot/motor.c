@@ -6,7 +6,7 @@
 
 #include "motor.h"
 
-#include "samd21.h"
+#include "sam.h"
 #include "core_cm0plus.h"
 #include "torque.h"
 
