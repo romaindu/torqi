@@ -30,6 +30,11 @@ int main(void)
     return 0;
 }
 
+void tud_mount_cb(void)
+{
+	printf("Mounted\n");
+}
+
 uint16_t tud_hid_get_report_cb(
 	uint8_t report_id,
 	hid_report_type_t report_type,

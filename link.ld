@@ -33,7 +33,7 @@ SECTIONS
 	} > SRAM
 
 	/DISCARD/ :
-    {
-    	*(.ARM.exidx* .gnu.linkonce.armexidx.*)
-    }
+	{
+		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
+	}
 }

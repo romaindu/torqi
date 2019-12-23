@@ -186,76 +186,97 @@ uint8_t const desc_hid_report[] =
     0x45,0x00,                          //    Unit Exponent 0
     0xc0,                           //    End Collection
     0xc0,                       //    End Collection
+    0x05,0x0f,                  //    Usage Page Physical Interface
+    0x09,0xa7,                  //    Usage Start Delay
+    0x66,0x03,0x10,             //    Unit (Seconds)
+    0x55,0xfd,                  //    Unit Exponent -3
+    0x15,0x00,                  //    Logical Minimum 0
+    0x26,0xff,0x7f,             //    Logical Maximum 7FFFh (32767d)
+    0x35,0x00,                  //    Physical Minimum 0
+    0x46,0xff,0x7f,             //    Physical Maximum 7FFFh (32767d)
+    0x75,0x10,                  //    Report Size 10h (16d)
+    0x95,0x01,                  //    Report Count 1
+    0x91,0x02,                      //    Output (Variable)
+    0x66,0x00,0x00,             //    Unit 0
+    0x55,0x00,                  //    Unit Exponent 0
     0xc0,                   //    End Collection
 
     /* OUT 2: SET ENVELOPE REPORT */
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x5a,              //    Usage Set Envelope Report
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x02,                //    Report ID 2
-    0x09,0x22,                //    Usage Effect Block Index
-    0x15,0x01,                //    Logical Minimum 1
-    0x25,0x28,                //    Logical Maximum 28h (40d)
-    0x35,0x01,                //    Physical Minimum 1
-    0x45,0x28,                //    Physical Maximum 28h (40d)
-    0x75,0x08,                //    Report Size 8
-    0x95,0x01,                //    Report Count 1
-    0x91,0x02,                    //    Output (Variable)
-    0x09,0x5b,                //    Usage Attack Level
-    0x09,0x5d,                //    Usage Fade Level
-    0x15,0x00,                //    Logical Minimum 0
-    0x26,0x10,0x27,           //    Logical Maximum 2710h (10000d)
-    0x35,0x00,                //    Physical Minimum 0
-    0x46,0x10,0x27,           //    Physical Maximum 2710h (10000d)
-    0x75,0x10,                //    Report Size 10h (16d)
-    0x95,0x02,                //    Report Count 2
-    0x91,0x02,                    //    Output (Variable)
-    0x09,0x5c,                //    Usage Attack Time
-    0x09,0x5e,                //    Usage Fade Time
-    0x66,0x03,0x10,           //    Unit (Seconds)
-    0x55,0xfd,                //    Unit Exponent -3
-    0x26,0xff,0x7f,           //    Logical Maximum 7FFFh (32767d)
-    0x46,0xff,0x7f,           //    Physical Maximum 7FFFh (32767d)
-    0x75,0x10,                //    Report Size 16
-    0x91,0x02,                    //    Output (Variable)
-    0x45,0x00,                //    Physical Maximum 0
-    0x65,0x00,                //    Unit 0
-    0x55,0x00,                //    Unit Exponent 0
+    0x85,0x02,                  //    Report ID 2
+    0x09,0x22,                  //    Usage Effect Block Index
+    0x15,0x01,                  //    Logical Minimum 1
+    0x25,0x28,                  //    Logical Maximum 28h (40d)
+    0x35,0x01,                  //    Physical Minimum 1
+    0x45,0x28,                  //    Physical Maximum 28h (40d)
+    0x75,0x08,                  //    Report Size 8
+    0x95,0x01,                  //    Report Count 1
+    0x91,0x02,                      //    Output (Variable)
+    0x09,0x5b,                  //    Usage Attack Level
+    0x09,0x5d,                  //    Usage Fade Level
+    0x15,0x00,                  //    Logical Minimum 0
+    0x26,0x10,0x27,             //    Logical Maximum 2710h (10000d)
+    0x35,0x00,                  //    Physical Minimum 0
+    0x46,0x10,0x27,             //    Physical Maximum 2710h (10000d)
+    0x75,0x10,                  //    Report Size 10h (16d)
+    0x95,0x02,                  //    Report Count 2
+    0x91,0x02,                      //    Output (Variable)
+    0x09,0x5c,                  //    Usage Attack Time
+    0x09,0x5e,                  //    Usage Fade Time
+    0x66,0x03,0x10,             //    Unit (Seconds)
+    0x55,0xfd,                  //    Unit Exponent -3
+    0x26,0xff,0x7f,             //    Logical Maximum 7FFFh (32767d)
+    0x46,0xff,0x7f,             //    Physical Maximum 7FFFh (32767d)
+    0x75,0x10,                  //    Report Size 16
+    0x91,0x02,                      //    Output (Variable)
+    0x45,0x00,                  //    Physical Maximum 0
+    0x65,0x00,                  //    Unit 0
+    0x55,0x00,                  //    Unit Exponent 0
     0xc0,                   //    End Collection
 
     /* OUT 3: SET CONDITION REPORT */
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x5f,              //    Usage Set Condition Report
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x03,                //    Report ID 3
-    0x09,0x22,                //    Usage Effect Block Index
-    0x15,0x01,                //    Logical Minimum 1
-    0x25,0x28,                //    Logical Maximum 28h (40d)
-    0x35,0x01,                //    Physical Minimum 1
-    0x45,0x28,                //    Physical Maximum 28h (40d)
-    0x75,0x08,                //    Report Size 8
-    0x95,0x01,                //    Report Count 1
-    0x91,0x02,                    //    Output (Variable)
-    0x09,0x60,                //    Usage CP Offset
-    0x09,0x65,                //    Usage Dead Band
-    0x09,0x61,                //    Usage Positive Coefficient
-    0x09,0x62,                //    Usage Negative Coefficient
-    0x16,0xf0,0xd8,           //    Logical Minimum D8F0h (-10000d)
-    0x26,0x10,0x27,           //    Logical Maximum 2710h (10000d)
-    0x36,0xf0,0xd8,           //    Physical Minimum D8F0h (-10000d)
-    0x46,0x10,0x27,           //    Physical Maximum 2710h (10000d)
-    0x75,0x10,                //    Report Size 10h (16)
-    0x95,0x04,                //    Report Count 4
-    0x91,0x02,                    //    Output (Variable)
-    0x15,0x00,                //    Logical Minimum 0
-    0x26,0x10,0x27,           //    Logical Maximum 2710h (10000d)
-    0x35,0x00,                //    Physical Minimum 0
-    0x46,0x10,0x27,           //    Physical Maximum 2710h (10000d)
-    0x09,0x63,                //    Usage Positive Saturation
-    0x09,0x64,                //    Usage Negative Saturation
-    0x75,0x10,                //    Report Size 10h (16d)
-    0x95,0x02,                //    Report Count 2
-    0x91,0x02,                    //    Output (Variable)
+    0x85,0x03,                  //    Report ID 3
+    0x09,0x22,                  //    Usage Effect Block Index
+    0x15,0x01,                  //    Logical Minimum 1
+    0x25,0x28,                  //    Logical Maximum 28h (40d)
+    0x35,0x01,                  //    Physical Minimum 1
+    0x45,0x28,                  //    Physical Maximum 28h (40d)
+    0x75,0x08,                  //    Report Size 8
+    0x95,0x01,                  //    Report Count 1
+    0x91,0x02,                      //    Output (Variable)
+    0x09,0x23,                  //    Usage Parameter Block Offset
+    0x15,0x00,                  //    Logical Minimum 0
+    0x25,0x01,                  //    Logical Maximum 1
+    0x35,0x00,                  //    Physical Minimum 0
+    0x45,0x01,                  //    Physical Maximum 1
+    0x75,0x08,                  //    Report Size 8
+    0x95,0x01,                  //    Report Count 1
+    0x91,0x02,                      //    Output (Variable)
+    0x09,0x60,                  //    Usage CP Offset
+    0x09,0x65,                  //    Usage Dead Band
+    0x09,0x61,                  //    Usage Positive Coefficient
+    0x09,0x62,                  //    Usage Negative Coefficient
+    0x16,0xf0,0xd8,             //    Logical Minimum D8F0h (-10000d)
+    0x26,0x10,0x27,             //    Logical Maximum 2710h (10000d)
+    0x36,0xf0,0xd8,             //    Physical Minimum D8F0h (-10000d)
+    0x46,0x10,0x27,             //    Physical Maximum 2710h (10000d)
+    0x75,0x10,                  //    Report Size 10h (16)
+    0x95,0x04,                  //    Report Count 4
+    0x91,0x02,                      //    Output (Variable)
+    0x15,0x00,                  //    Logical Minimum 0
+    0x26,0x10,0x27,             //    Logical Maximum 2710h (10000d)
+    0x35,0x00,                  //    Physical Minimum 0
+    0x46,0x10,0x27,             //    Physical Maximum 2710h (10000d)
+    0x09,0x63,                  //    Usage Positive Saturation
+    0x09,0x64,                  //    Usage Negative Saturation
+    0x75,0x10,                  //    Report Size 10h (16d)
+    0x95,0x02,                  //    Report Count 2
+    0x91,0x02,                      //    Output (Variable)
     0xc0,                   //    End Collection
     
     /* OUT 4: SET PERIODIC REPORT */
