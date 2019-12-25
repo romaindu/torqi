@@ -1,7 +1,7 @@
 #ifndef TUSB_CONFIG_H
 #define TUSB_CONFIG_H
 
-#define CFG_TUSB_DEBUG			1
+#define CFG_TUSB_DEBUG			2
 
 #define CFG_TUSB_MCU 			OPT_MCU_SAMD21
 

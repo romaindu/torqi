@@ -8,6 +8,7 @@
 
 #include "motor.h"
 #include "printf.h"
+#include "reports.h"
 #include "serial.h"
 #include "tusb.h"
 
