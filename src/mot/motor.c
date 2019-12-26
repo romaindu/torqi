@@ -7,7 +7,6 @@
 #include "motor.h"
 
 #include "sam.h"
-#include "core_cm0plus.h"
 #include "torque.h"
 
 #define PHASE_A_ADC_IN  4
