@@ -8,26 +8,26 @@
 
 enum
 {
-  ITF_NUM_HID,
-  ITF_NUM_TOTAL
+    ITF_NUM_CDC,
+    ITF_NUM_CDC_DATA,
+    ITF_NUM_HID,
+    ITF_NUM_TOTAL
 };
 
-#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
-
-#define EPNUM_HID 0x01
+#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
 
 tusb_desc_device_t const desc_device =
 {
     .bLength            = sizeof(tusb_desc_device_t),
     .bDescriptorType    = TUSB_DESC_DEVICE,
     .bcdUSB             = 0x0200,
-    .bDeviceClass       = 0x00,
-    .bDeviceSubClass    = 0x00,
-    .bDeviceProtocol    = 0x00,
+    .bDeviceClass       = TUSB_CLASS_MISC,
+    .bDeviceSubClass    = MISC_SUBCLASS_COMMON,
+    .bDeviceProtocol    = MISC_PROTOCOL_IAD,
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
 
     .idVendor           = 0x2000,
-    .idProduct          = 0x2005,
+    .idProduct          = 0x200B,
     .bcdDevice          = 0x0100,
 
     .iManufacturer      = 0x01,
@@ -39,7 +39,7 @@ tusb_desc_device_t const desc_device =
 
 uint8_t const * tud_descriptor_device_cb(void)
 {
-  return (uint8_t const *) &desc_device;
+    return (uint8_t const *) &desc_device;
 }
 
 uint8_t const desc_hid_report[] =
@@ -572,30 +572,35 @@ uint8_t const desc_hid_report[] =
 
 uint8_t const * tud_hid_descriptor_report_cb(void)
 {
-  return desc_hid_report;
+    return desc_hid_report;
 }
 
 uint8_t const desc_configuration[] =
 {
-  // interface count, string index, total length, attribute, power in mA
-  TUD_CONFIG_DESCRIPTOR(ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_SELF_POWERED, 0),
+    // Interface count, string index, total length, attribute, power in mA
+    TUD_CONFIG_DESCRIPTOR(ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_SELF_POWERED, 0),
 
-  // Interface number, string index, protocol, report descriptor len, EP In & Out address, size & polling interval
-  TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, HID_PROTOCOL_NONE, sizeof(desc_hid_report), EPNUM_HID, 0x80 | EPNUM_HID, CFG_TUD_HID_BUFSIZE, 1)
+    // Interface number, string index, EP notification address and size, EP data address (out, in) and size
+    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x81, 8, 0x02, 0x82, CFG_TUD_CDC_EPSIZE),
+
+    // Interface number, string index, protocol, report descriptor len, EP OUT & IN address, size & polling interval
+    TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 5, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x03, 0x83, CFG_TUD_HID_BUFSIZE, 1),
 };
 
 uint8_t const * tud_descriptor_configuration_cb(uint8_t index)
 {
-  (void) index;
-  return desc_configuration;
+    (void) index;
+    return desc_configuration;
 }
 
 char const* string_desc_arr [] =
 {
-  (const char[]) { 0x09, 0x04 }, // 0: English (0x0409)
-  "Dept Industries",             // 1: Manufacturer
-  "Torqi",                       // 2: Product
-  "0001",                        // 3: Serials
+    (const char[]) { 0x09, 0x04 },  // 0: English (0x0409)
+    "Dept Industries",              // 1: Manufacturer
+    "Torqi",                        // 2: Product
+    "0001",                         // 3: Serials
+    "Torqi Virtual COM",            // 4: CDC
+    "Torqi Force Feedback",         // 5: HID
 };
 
 static uint16_t _desc_str[32];

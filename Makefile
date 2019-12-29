@@ -6,6 +6,7 @@ SRC = \
 src/boot.S \
 \
 lib/tinyusb/class/hid/hid_device.c \
+lib/tinyusb/class/cdc/cdc_device.c \
 lib/tinyusb/common/tusb_fifo.c \
 lib/tinyusb/device/usbd.c \
 lib/tinyusb/device/usbd_control.c \

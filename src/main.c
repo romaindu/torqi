@@ -33,29 +33,41 @@ int main(void)
 
 void tud_mount_cb(void)
 {
-	printf("Mounted\n");
+    printf("Mounted\n");
+}
+
+void tud_cdc_rx_cb(uint8_t itf)
+{
+    (uint8_t) itf;
+}
+
+void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
+{
+    (uint8_t) itf;
+    (bool) dtr;
+    (bool) rts;
 }
 
 uint16_t tud_hid_get_report_cb(
-	uint8_t report_id,
-	hid_report_type_t report_type,
-	uint8_t* buffer,
-	uint16_t reqlen)
+    uint8_t report_id,
+    hid_report_type_t report_type,
+    uint8_t* buffer,
+    uint16_t reqlen)
 {
-  (void) report_id;
-  (void) report_type;
-  (void) buffer;
-  (void) reqlen;
+    (void) report_id;
+    (void) report_type;
+    (void) buffer;
+    (void) reqlen;
 
-  return 0;
+    return 0;
 }
 
 void tud_hid_set_report_cb(
-	uint8_t report_id,
-	hid_report_type_t report_type, 
-	uint8_t const* buffer,
-	uint16_t bufsize)
+    uint8_t report_id,
+    hid_report_type_t report_type, 
+    uint8_t const* buffer,
+    uint16_t bufsize)
 {
-  (void) report_id;
-  (void) report_type;
+    (void) report_id;
+    (void) report_type;
 }
