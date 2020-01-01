@@ -18,17 +18,14 @@ struct set_effect_report {
 	uint8_t  effect_block_index;
 	uint8_t  effect_type;
 	int16_t  duration;
-	int16_t  trigger_repeat_interval;
-	int16_t  sample_period;
 	uint8_t  gain;
-	uint8_t  trigger_button;
 	uint8_t  axis_enable_x :1;
 	uint8_t  axis_enable_y :1;
 	uint8_t  :5;
 	uint8_t  direction_enable :1;
 	uint8_t  direction_x;
 	uint8_t  direction_y;
-	uint16_t start_delay;
+	int16_t  start_delay;
 } __attribute__ ((__packed__));
 
 struct set_envelope_report {
@@ -55,9 +52,9 @@ struct set_condition_report {
 struct set_periodic_report {
 	uint8_t  report_id;
 	uint8_t  effect_block_index;
-	int16_t  magnitude;
-	int16_t  offset;
-	uint8_t  phase;
+	int8_t   magnitude;
+	int8_t   offset;
+	int8_t   phase;
 	int16_t  period;
 } __attribute__ ((__packed__));
 
@@ -99,7 +96,6 @@ struct device_gain_report {
 struct create_new_effect_report {
 	uint8_t  report_id;
 	uint8_t  effect_type;
-	uint16_t byte_count;
 } __attribute__ ((__packed__));
 
 struct pid_block_load_report {
@@ -111,7 +107,7 @@ struct pid_block_load_report {
 
 struct pid_pool_report {
 	uint8_t  report_id;
-	uint8_t  ram_pool_size;
+	uint16_t ram_pool_size;
 	uint8_t  simultaneous_effects;
 	uint8_t  device_managed_pool :1;
 	uint8_t  shared_parameter_block :1;

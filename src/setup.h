@@ -81,6 +81,12 @@ void setup_clocks(void)
                         GCLK_CLKCTRL_ID_ADC;
     PM->APBCMASK.bit.ADC_ = 1;
 
+    /* EIC runs on GCLK0 (48MHz) */
+    GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
+                        GCLK_CLKCTRL_GEN_GCLK0 +
+                        GCLK_CLKCTRL_ID_EIC;
+    PM->APBAMASK.bit.EIC_ = 1;
+
     PM->APBCMASK.bit.EVSYS_ = 1;
 }
 
@@ -117,4 +123,7 @@ void setup_ports(void)
     pin_mux_wrconfig(PINMUX_PA03B_ADC_AIN1);
     pin_mux_wrconfig(PINMUX_PA04B_ADC_AIN4);
     pin_mux_wrconfig(PINMUX_PA05B_ADC_AIN5);
+
+    pin_mux_wrconfig(PINMUX_PA27A_EIC_EXTINT15);
+    pin_mux_wrconfig(PINMUX_PA28A_EIC_EXTINT8);
 }

@@ -8,6 +8,7 @@
 
 #include "sam.h"
 #include "torque.h"
+#include "printf.h"
 
 #define PHASE_A_ADC_IN  4
 #define PHASE_B_ADC_IN  5
@@ -15,6 +16,10 @@
 #define PWM_DT          30
 #define PWM_MIN         48
 #define ADC_SMPT        1
+
+#define ENC_STEP        1073741
+
+static volatile int32_t m_angle;
 
 void motor_init(void)
 {
@@ -75,6 +80,16 @@ void motor_init(void)
     EVSYS->CHANNEL.reg = EVSYS_CHANNEL_CHANNEL(0) +
                          EVSYS_CHANNEL_EVGEN(0x22) +
                          EVSYS_CHANNEL_PATH_ASYNCHRONOUS;
+
+    /* EIC (encoder) */
+    EIC->CTRL.bit.SWRST = 1;
+    while (EIC->STATUS.bit.SYNCBUSY);
+
+    EIC->CONFIG[1].reg = EIC_CONFIG_SENSE0_BOTH + EIC_CONFIG_SENSE7_BOTH;
+    EIC->INTENSET.reg = EIC_INTENSET_EXTINT8 + EIC_INTENSET_EXTINT15;
+    EIC->INTFLAG.reg = EIC_INTFLAG_EXTINT8 + EIC_INTFLAG_EXTINT15;
+    NVIC_EnableIRQ(EIC_IRQn);
+    EIC->CTRL.bit.ENABLE = 1;
 }
 
 void motor_disable(void)
@@ -87,6 +102,16 @@ void motor_enable(void)
 {
     TCC0->CTRLA.bit.ENABLE = 1;
     while (TCC0->SYNCBUSY.bit.ENABLE);
+}
+
+int32_t motor_angle(void)
+{
+    return m_angle;
+}
+
+void motor_set_angle(int32_t angle)
+{
+    m_angle = angle;
 }
 
 static uint32_t map_timer_count(int32_t pwm)
@@ -125,4 +150,21 @@ void ADC_Handler(void)
         TCC0->CCB[1].bit.CCB = map_timer_count(pwm);
         ADC->INPUTCTRL.bit.MUXPOS = PHASE_A_ADC_IN;
     }
+}
+
+void EIC_Handler(void)
+{
+    static const int8_t enc_table[16] = {0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0};
+    static uint8_t enc = 0;
+
+    PORT->Group[1].OUTCLR.reg = (1 << 30);
+
+    EIC->INTFLAG.reg = EIC_INTFLAG_EXTINT8 + EIC_INTFLAG_EXTINT15;
+
+    enc <<= 2;
+    enc |= (PORT->Group[0].IN.reg & (PORT_PA27 + PORT_PA28)) >> PIN_PA27;
+
+    m_angle += ENC_STEP*enc_table[enc & 0b1111];
+
+    PORT->Group[1].OUTSET.reg = (1 << 30);
 }

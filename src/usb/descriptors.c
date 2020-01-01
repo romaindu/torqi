@@ -8,13 +8,11 @@
 
 enum
 {
-    ITF_NUM_CDC,
-    ITF_NUM_CDC_DATA,
     ITF_NUM_HID,
     ITF_NUM_TOTAL
 };
 
-#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
+#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
 
 tusb_desc_device_t const desc_device =
 {
@@ -27,7 +25,7 @@ tusb_desc_device_t const desc_device =
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
 
     .idVendor           = 0x2000,
-    .idProduct          = 0x200B,
+    .idProduct          = 0x201C,
     .bcdDevice          = 0x0100,
 
     .iManufacturer      = 0x01,
@@ -52,8 +50,8 @@ uint8_t const desc_hid_report[] =
     0xa1,0x00,              //    Collection Physical
     0x09,0x30,                  //    Usage X
     0x09,0x31,                  //    Usage Y
-    0x16,0x00,0xf0,             //    Logical Minimum (-4096d)
-    0x26,0xff,0x0f,             //    Logical Maximum (4095d)
+    0x16,0x00,0x80,             //    Logical Minimum (-32768d)
+    0x26,0xff,0x7f,             //    Logical Maximum (32767d)
     0x36,0xe4,0xfd,             //    Physical Minimum (-540)
     0x46,0x1c,0x02,             //    Physical Maximum (540d)
     0x75,0x10,                  //    Report Size 10h (16d)
@@ -118,8 +116,8 @@ uint8_t const desc_hid_report[] =
     0x91,0x00,                      //    Output
     0xc0,                       //    End Collection
     0x09,0x50,                  //    Usage Duration
-    0x09,0x54,                  //    Usage Trigger Repeat Interval
-    0x09,0x51,                  //    Usage Sample Period
+    //0x09,0x54,                  //    Usage Trigger Repeat Interval
+    //0x09,0x51,                  //    Usage Sample Period
     0x15,0x00,                  //    Logical Minimum 0
     0x26,0xff,0x7f,             //    Logical Maximum 7FFFh (32767d)
     0x35,0x00,                  //    Physical Minimum 0
@@ -127,23 +125,15 @@ uint8_t const desc_hid_report[] =
     0x66,0x03,0x10,             //    Unit (Seconds)
     0x55,0xfd,                  //    Unit Exponent -3
     0x75,0x10,                  //    Report Size 16
-    0x95,0x03,                  //    Report Count 3
-    0x91,0x02,                      //    Output (Variable)
+    0x95,0x01,                  //    Report Count 1
+    0x91,0x02,                      //    Output (Variable)*/
+    0x65,0x00,                  //    Unit 0
     0x55,0x00,                  //    Unit Exponent 0
-    0x65,0x00,                  //    Unit None
     0x09,0x52,                  //    Usage Gain
     0x15,0x00,                  //    Logical Minimum 0
     0x26,0xff,0x00,             //    Logical Maximum FFh (255d)
     0x35,0x00,                  //    Physical Minimum 0
     0x46,0x10,0x27,             //    Physical Maximum 2710h (10000d)
-    0x75,0x08,                  //    Report Size 8
-    0x95,0x01,                  //    Report Count 1
-    0x91,0x02,                      //    Output (Variable)
-    0x09,0x53,                  //    Usage Trigger Button
-    0x15,0x01,                  //    Logical Minimum 1
-    0x25,0x08,                  //    Logical Maximum 8
-    0x35,0x01,                  //    Physical Minimum 1
-    0x45,0x08,                  //    Physical Maximum 8
     0x75,0x08,                  //    Report Size 8
     0x95,0x01,                  //    Report Count 1
     0x91,0x02,                      //    Output (Variable)
@@ -175,29 +165,26 @@ uint8_t const desc_hid_report[] =
     0x09,0x30,                          //    Usage X
     0x09,0x31,                          //    Usage Y
     0x15,0x00,                          //    Logical Minimum 0
-    0x26,0xff,0x00,                     //    Logical Maximum FFh (255d)
+    0x26,0xff,0x00,                     //    Logical Maximum 0
     0x35,0x00,                          //    Physical Minimum 0
-    0x46,0x68,0x01,                     //    Physical Maximum 168h (360d)
-    0x66,0x14,0x00,                     //    Unit (Degrees)
+    0x46,0x68,0x01,                     //    Physical Maximum 0
     0x75,0x08,                          //    Report Size 8
     0x95,0x02,                          //    Report Count 2
     0x91,0x02,                              //    Output (Variable)
-    0x65,0x00,                          //    Unit 0
-    0x45,0x00,                          //    Unit Exponent 0
     0xc0,                           //    End Collection
     0xc0,                       //    End Collection
     0x05,0x0f,                  //    Usage Page Physical Interface
     0x09,0xa7,                  //    Usage Start Delay
-    0x66,0x03,0x10,             //    Unit (Seconds)
-    0x55,0xfd,                  //    Unit Exponent -3
     0x15,0x00,                  //    Logical Minimum 0
     0x26,0xff,0x7f,             //    Logical Maximum 7FFFh (32767d)
     0x35,0x00,                  //    Physical Minimum 0
     0x46,0xff,0x7f,             //    Physical Maximum 7FFFh (32767d)
-    0x75,0x10,                  //    Report Size 10h (16d)
+    0x66,0x03,0x10,             //    Unit (Seconds)
+    0x55,0xfd,                  //    Unit Exponent -3
+    0x75,0x10,                  //    Report Size 16
     0x95,0x01,                  //    Report Count 1
-    0x91,0x02,                      //    Output (Variable)
-    0x66,0x00,0x00,             //    Unit 0
+    0x91,0x02,                      //    Output (Variable)*/
+    0x65,0x00,                  //    Unit 0
     0x55,0x00,                  //    Unit Exponent 0
     0xc0,                   //    End Collection
 
@@ -294,30 +281,33 @@ uint8_t const desc_hid_report[] =
     0x91,0x02,                     //    Output (Variable)
     0x09,0x70,                  //    Usage Magnitude
     0x15,0x00,                  //    Logical Minimum 0
-    0x26,0x10,0x27,             //    Logical Maximum 2710h (10000d)
+    0x25,0x7f,                  //    Logical Maximum 7Fh (127d)
     0x35,0x00,                  //    Physical Minimum 0
     0x46,0x10,0x27,             //    Physical Maximum 2710h (10000d)
-    0x75,0x10,                  //    Report Size 10h (16d)
+    0x75,0x08,                  //    Report Size 08h (8d)
     0x95,0x01,                  //    Report Count 1
     0x91,0x02,                     //    Output (Variable)
     0x09,0x6f,                  //    Usage Offset
-    0x16,0xf0,0xd8,             //    Logical Minimum D8F0h (-10000d)
-    0x26,0x10,0x27,             //    Logical Maximum 2710h (10000d)
+    0x15,0x81,                  //    Logical Minimum 81h (-127d)
+    0x25,0x7f,                  //    Logical Maximum 7Fh (127d)
     0x36,0xf0,0xd8,             //    Physical Minimum D8F0h (-10000d)
     0x46,0x10,0x27,             //    Physical Maximum 2710h (10000d)
+    0x75,0x08,                  //    Report Size 08h (8d)
     0x95,0x01,                  //    Report Count 1
     0x91,0x02,                     //    Output (Variable)
     0x09,0x71,                  //    Usage Phase
     0x65,0x14,                  //    Unit (Degrees)
     0x55,0xfe,                  //    Unit Exponent -2
-    0x15,0x00,                  //    Logical Minimum 0
-    0x26,0xb4,0x00,             //    Logical Maximum B4h (180d)
+    0x15,0x81,                  //    Logical Minimum 81h (-127d)
+    0x25,0x7f,                  //    Logical Maximum 7Fh (127d)
     0x35,0x00,                  //    Physical Minimum 0
     0x47,0xa0,0x8c,0x00,0x00,   //    Physical Maximum 8CA0h (36000d)
     0x75,0x08,                  //    Report Size 8
     0x91,0x02,                     //    Output (Variable)
     0x09,0x72,                  //    Usage Period
+    0x15,0x00,                  //    Logical Minimum 0
     0x26,0xff,0x7f,             //    Logical Maximum 7FFFh (32767d)
+    0x35,0x00,                  //    Physical Minimum 0
     0x46,0xff,0x7f,             //    Physical Maximum 7FFFh (32767d)
     0x66,0x03,0x10,             //    Unit (Seconds)
     0x55,0xfd,                  //    Unit Exponent -3
@@ -366,7 +356,7 @@ uint8_t const desc_hid_report[] =
     0x91,0x02,                      //    Output (Variable)
     0x09,0x75,                  //    Usage Ramp Start
     0x09,0x76,                  //    Usage Ramp End
-    0x15,0x80,                  //    Logical Minimum 80h (-128d)
+    0x15,0x81,                  //    Logical Minimum 80h (-127d)
     0x25,0x7f,                  //    Logical Maximum 7Fh (127d)
     0x36,0xf0,0xd8,             //    Physical Minimum D8F0h (-10000d)
     0x46,0x10,0x27,             //    Physical Maximum 2710h (10000d)
@@ -381,7 +371,7 @@ uint8_t const desc_hid_report[] =
     0xa1,0x02,              //    Collection Datalink
     0x85,0x0a,                  //    Report ID Ah (10d)
     0x09,0x22,                  //    Usage Effect Block Index
-    0x15,0x00,                  //    Logical Minimum 0
+    0x15,0x01,                  //    Logical Minimum 1
     0x25,0x28,                  //    Logical Maximum 28h (40d)
     0x35,0x01,                  //    Physical Minimum 1
     0x45,0x28,                  //    Physical Maximum 28h (40d)
@@ -485,17 +475,6 @@ uint8_t const desc_hid_report[] =
     0x95,0x01,                      //    Report Count 1
     0xb1,0x00,                          //    Feature
     0xc0,                       // End Collection
-    0x05,0x01,                  //    Usage Page Generic Desktop
-    0x09,0x3b,                  //    Usage Byte Count
-    0x15,0x00,                  //    Logical Minimum 0
-    0x26,0xff,0x01,             //    Logical Maximum 1FFh (511d)
-    0x35,0x00,                  //    Physical Minimum 0
-    0x46,0xff,0x01,             //    Physical Maximum 1FFh (511d)
-    0x75,0x0a,                  //    Report Size Ah (10d)
-    0x95,0x01,                  //    Report Count 1
-    0xb1,0x02,                      //    Feature (Variable)
-    0x75,0x06,                  //    Report Size 6
-    0xb1,0x01,                      //    Feature (Constant)
     0xc0,                   //    End Collection
 
     /* FEATURE 2: BLOCK LOAD REPORT */
@@ -580,11 +559,8 @@ uint8_t const desc_configuration[] =
     // Interface count, string index, total length, attribute, power in mA
     TUD_CONFIG_DESCRIPTOR(ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_SELF_POWERED, 0),
 
-    // Interface number, string index, EP notification address and size, EP data address (out, in) and size
-    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x81, 8, 0x02, 0x82, CFG_TUD_CDC_EPSIZE),
-
     // Interface number, string index, protocol, report descriptor len, EP OUT & IN address, size & polling interval
-    TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 5, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x03, 0x83, CFG_TUD_HID_BUFSIZE, 1),
+    TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 4, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x03, 0x83, CFG_TUD_HID_BUFSIZE, 1),
 };
 
 uint8_t const * tud_descriptor_configuration_cb(uint8_t index)
@@ -599,8 +575,7 @@ char const* string_desc_arr [] =
     "Dept Industries",              // 1: Manufacturer
     "Torqi",                        // 2: Product
     "0001",                         // 3: Serials
-    "Torqi Virtual COM",            // 4: CDC
-    "Torqi Force Feedback",         // 5: HID
+    "Torqi Force Feedback",         // 4: HID
 };
 
 static uint16_t _desc_str[32];
