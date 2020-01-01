@@ -116,8 +116,6 @@ uint8_t const desc_hid_report[] =
     0x91,0x00,                      //    Output
     0xc0,                       //    End Collection
     0x09,0x50,                  //    Usage Duration
-    //0x09,0x54,                  //    Usage Trigger Repeat Interval
-    //0x09,0x51,                  //    Usage Sample Period
     0x15,0x00,                  //    Logical Minimum 0
     0x26,0xff,0x7f,             //    Logical Maximum 7FFFh (32767d)
     0x35,0x00,                  //    Physical Minimum 0
