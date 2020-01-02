@@ -14,12 +14,19 @@
 #define PHASE_B_ADC_IN  5
 
 #define PWM_DT          30
-#define PWM_MIN         48
-#define ADC_SMPT        1
+#define PWM_MIN         100
+#define ADC_SMPT        5
+#define ADC_LIMIT       1966
 
 #define ENC_STEP        1073741
 
-static volatile int32_t m_angle;
+static struct {
+    volatile int32_t    angle;
+    uint8_t             enc;
+} g_motor = {
+    .angle = 0,
+    .enc = 0,
+};
 
 void motor_init(void)
 {
@@ -40,7 +47,8 @@ void motor_init(void)
     TCC0->DRVCTRL.reg = TCC_DRVCTRL_INVEN(0xf0) +
                         TCC_DRVCTRL_NRV(0x00) + TCC_DRVCTRL_NRE(0xff);
 
-    TCC0->EVCTRL.bit.OVFEO = 1;
+    TCC0->EVCTRL.reg = TCC_EVCTRL_OVFEO +
+                       TCC_EVCTRL_EVACT0_FAULT + TCC_EVCTRL_TCEI0;
 
     /* ADC */
     ADC->CTRLA.bit.SWRST = 1;
@@ -57,7 +65,10 @@ void motor_init(void)
                      ADC_CALIB_BIAS_CAL(bias);
 
     ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV4;
-    ADC->EVCTRL.bit.STARTEI = 1;
+    ADC->WINLT.reg = 2048 - ADC_LIMIT;
+    ADC->WINUT.reg = 2048 + ADC_LIMIT;
+    ADC->WINCTRL.reg = ADC_WINCTRL_WINMODE_MODE4;
+    ADC->EVCTRL.reg = ADC_EVCTRL_STARTEI + ADC_EVCTRL_WINMONEO;
     ADC->SAMPCTRL.bit.SAMPLEN = ADC_SMPT;
     ADC->REFCTRL.reg = ADC_REFCTRL_REFSEL_AREFA;
     ADC->INPUTCTRL.reg = ADC_INPUTCTRL_MUXPOS_PIN4 + ADC_INPUTCTRL_MUXNEG_GND +
@@ -80,6 +91,13 @@ void motor_init(void)
     EVSYS->CHANNEL.reg = EVSYS_CHANNEL_CHANNEL(0) +
                          EVSYS_CHANNEL_EVGEN(0x22) +
                          EVSYS_CHANNEL_PATH_ASYNCHRONOUS;
+
+    /* EVENT1: ADC_WINMON -> resynchronized -> TCC0_EV0 */
+    EVSYS->USER.reg = EVSYS_USER_USER(0x04) + EVSYS_USER_CHANNEL(2);
+    EVSYS->CHANNEL.reg = EVSYS_CHANNEL_CHANNEL(1) +
+                         EVSYS_CHANNEL_EVGEN(0x43) +
+                         EVSYS_CHANNEL_EDGSEL_RISING_EDGE +
+                         EVSYS_CHANNEL_PATH_RESYNCHRONIZED;
 
     /* EIC (encoder) */
     EIC->CTRL.bit.SWRST = 1;
@@ -104,14 +122,14 @@ void motor_enable(void)
     while (TCC0->SYNCBUSY.bit.ENABLE);
 }
 
-int32_t motor_angle(void)
+int32_t motor_get_angle(void)
 {
-    return m_angle;
+    return g_motor.angle;
 }
 
 void motor_set_angle(int32_t angle)
 {
-    m_angle = angle;
+    g_motor.angle = angle;
 }
 
 static uint32_t map_timer_count(int32_t pwm)
@@ -154,17 +172,19 @@ void ADC_Handler(void)
 
 void EIC_Handler(void)
 {
-    static const int8_t enc_table[16] = {0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0};
-    static uint8_t enc = 0;
+    const int8_t enc_table[16] = {0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0};
+    int8_t s;
 
     PORT->Group[1].OUTCLR.reg = (1 << 30);
 
     EIC->INTFLAG.reg = EIC_INTFLAG_EXTINT8 + EIC_INTFLAG_EXTINT15;
 
-    enc <<= 2;
-    enc |= (PORT->Group[0].IN.reg & (PORT_PA27 + PORT_PA28)) >> PIN_PA27;
+    g_motor.enc <<= 2;
+    g_motor.enc |= (PORT->Group[0].IN.reg & (PORT_PA27 + PORT_PA28)) >> PIN_PA27;
+    s = enc_table[g_motor.enc & 0b1111];
 
-    m_angle += ENC_STEP*enc_table[enc & 0b1111];
+    torque_on_encoder(s);
+    g_motor.angle += ENC_STEP*s;
 
     PORT->Group[1].OUTSET.reg = (1 << 30);
 }

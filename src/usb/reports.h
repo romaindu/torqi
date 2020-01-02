@@ -19,12 +19,9 @@ struct set_effect_report {
 	uint8_t  effect_type;
 	int16_t  duration;
 	uint8_t  gain;
-	uint8_t  axis_enable_x :1;
-	uint8_t  axis_enable_y :1;
-	uint8_t  :5;
-	uint8_t  direction_enable :1;
-	uint8_t  direction_x;
-	uint8_t  direction_y;
+	uint8_t  :8;
+	uint8_t  :8;
+	uint8_t  :8;
 	int16_t  start_delay;
 } __attribute__ ((__packed__));
 

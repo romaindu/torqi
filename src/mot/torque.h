@@ -6,8 +6,11 @@
 enum {
     PHASE_A,
     PHASE_B,
+    PHASES,
 };
 
+void torque_set(int8_t trq);
+void torque_on_encoder(int8_t s);
 int32_t torque_on_adc_sample(int32_t ph, int32_t adc);
 
 #endif

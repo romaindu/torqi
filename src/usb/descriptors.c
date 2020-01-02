@@ -124,7 +124,7 @@ uint8_t const desc_hid_report[] =
     0x55,0xfd,                  //    Unit Exponent -3
     0x75,0x10,                  //    Report Size 16
     0x95,0x01,                  //    Report Count 1
-    0x91,0x02,                      //    Output (Variable)*/
+    0x91,0x02,                      //    Output (Variable)
     0x65,0x00,                  //    Unit 0
     0x55,0x00,                  //    Unit Exponent 0
     0x09,0x52,                  //    Usage Gain

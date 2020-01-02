@@ -12,6 +12,8 @@
 #include "serial.h"
 #include "tusb.h"
 
+#include "torque.h"
+
 void printmem(void const *buf, uint16_t count)
 {
     for (int i = 0; i < count; ++i) {
@@ -32,15 +34,22 @@ int main(void)
     printf("\r\n\r\n=============== DEBUG ENABLED ===============\r\n");
 
     tusb_init();
-    //motor_enable();
+    motor_enable();
 
     PORT->Group[1].DIRSET.reg = (1 << 30);
 
-    for (;;) {
-    	tud_task();
+    int i = 0;
+    torque_set(107);
 
-        wrp.axis_x = motor_angle() >> 16;
-        tud_hid_report(0, &wrp, sizeof(wrp));
+    for (;;) {
+    	//tud_task();
+        //wrp.axis_x = motor_get_angle() >> 16;
+        //tud_hid_report(0, &wrp, sizeof(wrp));
+        if (++i > 1000) 
+        {
+            torque_on_encoder(1);
+            i = 0;
+        }
     }
 
     return 0;

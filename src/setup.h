@@ -87,6 +87,10 @@ void setup_clocks(void)
                         GCLK_CLKCTRL_ID_EIC;
     PM->APBAMASK.bit.EIC_ = 1;
 
+    /* EVSYS */
+    GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
+                        GCLK_CLKCTRL_GEN_GCLK0 +
+                        GCLK_CLKCTRL_ID_EVSYS_1;
     PM->APBCMASK.bit.EVSYS_ = 1;
 }
 

@@ -38,7 +38,7 @@ PREFIX = arm-none-eabi-
 CC = $(PREFIX)gcc
 SIZE = $(PREFIX)size
 CFLAGS =  -mthumb -march=armv6-m -mcpu=cortex-m0plus -nostartfiles -Werror 
-CFLAGS += -D__$(MCU)__ -DDEBUG_MODE -DPRINTF_INCLUDE_CONFIG_H
+CFLAGS += -O2 -D__$(MCU)__ -DDEBUG_MODE -DPRINTF_INCLUDE_CONFIG_H
 
 all: $(TARGET)
 
