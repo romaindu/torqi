@@ -5,6 +5,7 @@
  */
 
 #include "tusb.h"
+#include "reports.h"
 
 enum
 {
@@ -25,7 +26,7 @@ tusb_desc_device_t const desc_device =
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
 
     .idVendor           = 0x2000,
-    .idProduct          = 0x201C,
+    .idProduct          = 0x2023,
     .bcdDevice          = 0x0100,
 
     .iManufacturer      = 0x01,
@@ -46,7 +47,7 @@ uint8_t const desc_hid_report[] =
     0x05,0x01,          //    Usage Page Generic Desktop
     0x09,0x04,          //    Usage Joystick
     0xa1,0x01,          //    Collection Application
-    0x85,0x01,              //    Report ID 1
+    0x85,WHEEL_REPORT_ID,
     0xa1,0x00,              //    Collection Physical
     0x09,0x30,                  //    Usage X
     0x09,0x31,                  //    Usage Y
@@ -85,7 +86,7 @@ uint8_t const desc_hid_report[] =
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x21,              //    Usage Set Effect Report
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x01,                  //    Report ID 1
+    0x85,SET_EFFECT_REPORT_ID,
     0x09,0x22,                  //    Usage Effect Block Index
     0x15,0x01,                  //    Logical Minimum 1
     0x25,0x28,                  //    Logical Maximum 28h (40d)
@@ -115,18 +116,6 @@ uint8_t const desc_hid_report[] =
     0x95,0x01,                      //    Report Count 1
     0x91,0x00,                      //    Output
     0xc0,                       //    End Collection
-    0x09,0x50,                  //    Usage Duration
-    0x15,0x00,                  //    Logical Minimum 0
-    0x26,0xff,0x7f,             //    Logical Maximum 7FFFh (32767d)
-    0x35,0x00,                  //    Physical Minimum 0
-    0x46,0xff,0x7f,             //    Physical Maximum 7FFFh (32767d)
-    0x66,0x03,0x10,             //    Unit (Seconds)
-    0x55,0xfd,                  //    Unit Exponent -3
-    0x75,0x10,                  //    Report Size 16
-    0x95,0x01,                  //    Report Count 1
-    0x91,0x02,                      //    Output (Variable)
-    0x65,0x00,                  //    Unit 0
-    0x55,0x00,                  //    Unit Exponent 0
     0x09,0x52,                  //    Usage Gain
     0x15,0x00,                  //    Logical Minimum 0
     0x26,0xff,0x00,             //    Logical Maximum FFh (255d)
@@ -135,6 +124,20 @@ uint8_t const desc_hid_report[] =
     0x75,0x08,                  //    Report Size 8
     0x95,0x01,                  //    Report Count 1
     0x91,0x02,                      //    Output (Variable)
+    0x09,0x50,                  //    Usage Duration
+    0x09,0xa7,                  //    Usage Start Delay
+    0x15,0x00,                  //    Logical Minimum 0
+    0x26,0xff,0x00,             //    Logical Maximum FFh (255d)
+    0x35,0x00,                  //    Physical Minimum 0
+    0x46,0xff,0x00,             //    Physical Maximum FFh (255d)
+    0x66,0x03,0x10,             //    Unit (Seconds)
+    0x55,0xfd,                  //    Unit Exponent -3
+    0x75,0x08,                  //    Report Size 8
+    0x95,0x02,                  //    Report Count 2
+    0x91,0x02,                      //    Output (Variable)
+    0x05,0x0f,                  //    Usage Page Physical Interface
+    0x65,0x00,                  //    Unit 0
+    0x55,0x00,                  //    Unit Exponent 0
     0x09,0x55,                  //    Usage Axes Enable
     0xa1,0x02,                  //    Collection Datalink
     0x05,0x01,                      //    Usage Page Generic Desktop
@@ -163,34 +166,21 @@ uint8_t const desc_hid_report[] =
     0x09,0x30,                          //    Usage X
     0x09,0x31,                          //    Usage Y
     0x15,0x00,                          //    Logical Minimum 0
-    0x26,0xff,0x00,                     //    Logical Maximum 0
+    0x26,0xff,0x00,                     //    Logical Maximum 255
     0x35,0x00,                          //    Physical Minimum 0
-    0x46,0x68,0x01,                     //    Physical Maximum 0
+    0x46,0x68,0x01,                     //    Physical Maximum 168h (360d)
     0x75,0x08,                          //    Report Size 8
     0x95,0x02,                          //    Report Count 2
     0x91,0x02,                              //    Output (Variable)
     0xc0,                           //    End Collection
     0xc0,                       //    End Collection
-    0x05,0x0f,                  //    Usage Page Physical Interface
-    0x09,0xa7,                  //    Usage Start Delay
-    0x15,0x00,                  //    Logical Minimum 0
-    0x26,0xff,0x7f,             //    Logical Maximum 7FFFh (32767d)
-    0x35,0x00,                  //    Physical Minimum 0
-    0x46,0xff,0x7f,             //    Physical Maximum 7FFFh (32767d)
-    0x66,0x03,0x10,             //    Unit (Seconds)
-    0x55,0xfd,                  //    Unit Exponent -3
-    0x75,0x10,                  //    Report Size 16
-    0x95,0x01,                  //    Report Count 1
-    0x91,0x02,                      //    Output (Variable)*/
-    0x65,0x00,                  //    Unit 0
-    0x55,0x00,                  //    Unit Exponent 0
     0xc0,                   //    End Collection
 
     /* OUT 2: SET ENVELOPE REPORT */
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x5a,              //    Usage Set Envelope Report
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x02,                  //    Report ID 2
+    0x85,SET_ENVELOPE_REPORT_ID,
     0x09,0x22,                  //    Usage Effect Block Index
     0x15,0x01,                  //    Logical Minimum 1
     0x25,0x28,                  //    Logical Maximum 28h (40d)
@@ -202,19 +192,21 @@ uint8_t const desc_hid_report[] =
     0x09,0x5b,                  //    Usage Attack Level
     0x09,0x5d,                  //    Usage Fade Level
     0x15,0x00,                  //    Logical Minimum 0
-    0x26,0x10,0x27,             //    Logical Maximum 2710h (10000d)
+    0x26,0xff,0x00,             //    Logical Maximum FFh (255d)
     0x35,0x00,                  //    Physical Minimum 0
     0x46,0x10,0x27,             //    Physical Maximum 2710h (10000d)
-    0x75,0x10,                  //    Report Size 10h (16d)
+    0x75,0x08,                  //    Report Size 8h (8d)
     0x95,0x02,                  //    Report Count 2
     0x91,0x02,                      //    Output (Variable)
     0x09,0x5c,                  //    Usage Attack Time
     0x09,0x5e,                  //    Usage Fade Time
     0x66,0x03,0x10,             //    Unit (Seconds)
     0x55,0xfd,                  //    Unit Exponent -3
-    0x26,0xff,0x7f,             //    Logical Maximum 7FFFh (32767d)
-    0x46,0xff,0x7f,             //    Physical Maximum 7FFFh (32767d)
-    0x75,0x10,                  //    Report Size 16
+    0x15,0x00,                  //    Logical Minimum 0
+    0x26,0xff,0x00,             //    Logical Maximum FFh (255d)
+    0x35,0x00,                  //    Physical Minimum 0
+    0x46,0xff,0x00,             //    Physical Maximum FFh (255d)
+    0x75,0x08,                  //    Report Size 8
     0x91,0x02,                      //    Output (Variable)
     0x45,0x00,                  //    Physical Maximum 0
     0x65,0x00,                  //    Unit 0
@@ -225,7 +217,7 @@ uint8_t const desc_hid_report[] =
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x5f,              //    Usage Set Condition Report
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x03,                  //    Report ID 3
+    0x85,SET_CONDITION_REPORT_ID,
     0x09,0x22,                  //    Usage Effect Block Index
     0x15,0x01,                  //    Logical Minimum 1
     0x25,0x28,                  //    Logical Maximum 28h (40d)
@@ -246,20 +238,20 @@ uint8_t const desc_hid_report[] =
     0x09,0x65,                  //    Usage Dead Band
     0x09,0x61,                  //    Usage Positive Coefficient
     0x09,0x62,                  //    Usage Negative Coefficient
-    0x16,0xf0,0xd8,             //    Logical Minimum D8F0h (-10000d)
-    0x26,0x10,0x27,             //    Logical Maximum 2710h (10000d)
+    0x15,0x81,                  //    Logical Minimum 81h (-127d)
+    0x25,0x7f,                  //    Logical Maximum 7Fh (127d)
     0x36,0xf0,0xd8,             //    Physical Minimum D8F0h (-10000d)
     0x46,0x10,0x27,             //    Physical Maximum 2710h (10000d)
-    0x75,0x10,                  //    Report Size 10h (16)
+    0x75,0x08,                  //    Report Size 8h (8d)
     0x95,0x04,                  //    Report Count 4
     0x91,0x02,                      //    Output (Variable)
-    0x15,0x00,                  //    Logical Minimum 0
-    0x26,0x10,0x27,             //    Logical Maximum 2710h (10000d)
-    0x35,0x00,                  //    Physical Minimum 0
-    0x46,0x10,0x27,             //    Physical Maximum 2710h (10000d)
     0x09,0x63,                  //    Usage Positive Saturation
     0x09,0x64,                  //    Usage Negative Saturation
-    0x75,0x10,                  //    Report Size 10h (16d)
+    0x15,0x00,                  //    Logical Minimum 0
+    0x25,0x7f,                  //    Logical Maximum 7Fh (127d)
+    0x35,0x00,                  //    Physical Minimum 0
+    0x46,0x10,0x27,             //    Physical Maximum 2710h (10000d)
+    0x75,0x08,                  //    Report Size 8h (8d)
     0x95,0x02,                  //    Report Count 2
     0x91,0x02,                      //    Output (Variable)
     0xc0,                   //    End Collection
@@ -268,7 +260,7 @@ uint8_t const desc_hid_report[] =
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x6e,              //    Usage Set Effect Report
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x04,              //    Report ID 4
+    0x85,SET_PERIODIC_REPORT_ID,
     0x09,0x22,                  //    Usage Effect Block Index
     0x15,0x01,                  //    Logical Minimum 1
     0x25,0x28,                  //    Logical Maximum 28h (40d)
@@ -296,20 +288,20 @@ uint8_t const desc_hid_report[] =
     0x09,0x71,                  //    Usage Phase
     0x65,0x14,                  //    Unit (Degrees)
     0x55,0xfe,                  //    Unit Exponent -2
-    0x15,0x81,                  //    Logical Minimum 81h (-127d)
-    0x25,0x7f,                  //    Logical Maximum 7Fh (127d)
+    0x15,0x00,                  //    Logical Minimum 0
+    0x26,0xff,0x00,             //    Logical Maximum FFh (255d)
     0x35,0x00,                  //    Physical Minimum 0
     0x47,0xa0,0x8c,0x00,0x00,   //    Physical Maximum 8CA0h (36000d)
     0x75,0x08,                  //    Report Size 8
     0x91,0x02,                     //    Output (Variable)
     0x09,0x72,                  //    Usage Period
     0x15,0x00,                  //    Logical Minimum 0
-    0x26,0xff,0x7f,             //    Logical Maximum 7FFFh (32767d)
+    0x26,0xff,0x00,             //    Logical Maximum FFh (255d)
     0x35,0x00,                  //    Physical Minimum 0
-    0x46,0xff,0x7f,             //    Physical Maximum 7FFFh (32767d)
+    0x46,0xff,0x00,             //    Physical Maximum FFh (255d)
     0x66,0x03,0x10,             //    Unit (Seconds)
     0x55,0xfd,                  //    Unit Exponent -3
-    0x75,0x10,                  //    Report Size 10h (16d)
+    0x75,0x08,                  //    Report Size 8h (8d)
     0x95,0x01,                  //    Report Count 1
     0x91,0x02,                     //    Output (Variable)
     0x65,0x00,                  //    Unit 0
@@ -320,7 +312,7 @@ uint8_t const desc_hid_report[] =
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x73,              //    Usage Set Constant Force Report
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x05,                  //    Report ID 5
+    0x85,SET_CONSTANT_FORCE_REPORT_ID,
     0x09,0x22,                  //    Usage Effect Block Index
     0x15,0x01,                  //    Logical Minimum 1
     0x25,0x28,                  //    Logical Maximum 28h (40d)
@@ -339,11 +331,11 @@ uint8_t const desc_hid_report[] =
     0x91,0x02,                      //    Output (Variable)
     0xc0,                   //    End Collection
 
-    /* OUT 7: SET RAMP FORCE REPORT */
+    /* OUT 6: SET RAMP FORCE REPORT */
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x74,              //    Usage Set Ramp Force Report
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x06,                  //    Report ID 6
+    0x85,SET_RAMP_FORCE_REPORT_ID,
     0x09,0x22,                  //    Usage Effect Block Index
     0x15,0x01,                  //    Logical Minimum 1
     0x25,0x14,                  //    Logical Maximum 28h (40d)
@@ -367,7 +359,7 @@ uint8_t const desc_hid_report[] =
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x77,              //    Usage Effect Operation Report
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x0a,                  //    Report ID Ah (10d)
+    0x85,EFFECT_OPERATION_REPORT_ID,
     0x09,0x22,                  //    Usage Effect Block Index
     0x15,0x01,                  //    Logical Minimum 1
     0x25,0x28,                  //    Logical Maximum 28h (40d)
@@ -389,21 +381,13 @@ uint8_t const desc_hid_report[] =
     0x95,0x01,                      //    Report Count 1
     0x91,0x00,                          //    Output
     0xc0,                       //    End Collection
-    0x09,0x7c,                  //    Usage Loop Count
-    0x15,0x00,                  //    Logical Minimum 0
-    0x26,0x7f,0x00,             //    Logical Maximum FFh (255d)
-    0x35,0x00,                  //    Physical Minimum 0h (0d)
-    0x46,0xff,0x00,             //    Physical Maximum FFh (255d)
-    0x75,0x08,                  //    Report Size 8
-    0x95,0x01,                  //    Report Count 1
-    0x91,0x02,                      //    Output (Variable)
     0xc0,                   //    End Collection
 
     /* OUT 11: PID BLOCK FREE REPORT */
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x90,              //    Usage PID Block Free Report
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x0b,                  //    Report ID Bh (11d)
+    0x85,PID_BLOCK_FREE_REPORT_ID,
     0x09,0x22,                  //    Usage Effect Block Index
     0x25,0x28,                  //    Logical Maximum 28h (40d)
     0x15,0x01,                  //    Logical Minimum 1
@@ -418,7 +402,7 @@ uint8_t const desc_hid_report[] =
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x96,              //    Usage PID Device Control
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x0c,                  //    Report ID Ch (12d)
+    0x85,PID_DEVICE_CONTROL_REPORT_ID,
     0x09,0x97,                  //    Usage Enable Actuators
     0x09,0x98,                  //    Usage Disable Actuators
     0x09,0x99,                  //    Usage Stop All Effects
@@ -436,7 +420,7 @@ uint8_t const desc_hid_report[] =
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x7d,              //    Usage PID Device Gain Report
     0xa1,0x02,              //    Collection (Datalink)
-    0x85,0x0d,                  //    Report ID Dh (13d)
+    0x85,PID_DEVICE_GAIN_REPORT_ID,
     0x09,0x7e,                  //    Usage PID Device Gain
     0x15,0x00,                  //    Logical Minimum 0
     0x26,0xff,0x00,             //    Logical Maximum FFh (255)
@@ -451,7 +435,7 @@ uint8_t const desc_hid_report[] =
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0xab,              //    Usage Create New Effect Report
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x01,                  //    Report ID 1
+    0x85,CREATE_NEW_EFFECT_REPORT_ID,
     0x09,0x25,                  //    Usage Effect Type
     0xa1,0x02,                  //    Collection Datalink
     0x09,0x26,                      //    Usage ET Constant Force
@@ -479,7 +463,7 @@ uint8_t const desc_hid_report[] =
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x89,              //    Usage Block Load Report
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x02,                  //    Report ID 2
+    0x85,BLOCK_LOAD_REPORT_ID,
     0x09,0x22,                  //    Usage Effect Block Index
     0x25,0x28,                  //    Logical Maximum 28h (40d)
     0x15,0x01,                  //    Logical Minimum 1
@@ -503,10 +487,10 @@ uint8_t const desc_hid_report[] =
     0xc0,                       //    End Collection
     0x09,0xac,                  //    Usage RAM Pool Available
     0x15,0x00,                  //    Logical Minimum 0
-    0x27,0xff,0xff,0x00,0x00,   //    Logical Maximum FFFFh (65535d)
+    0x26,0xff,0x00,             //    Logical Maximum FFh (255d)
     0x35,0x00,                  //    Physical Minimum 0
-    0x47,0xff,0xff,0x00,0x00,   //    Physical Maximum FFFFh (65535d)
-    0x75,0x10,                  //    Report Size 10h (16d)
+    0x46,0xff,0x00,             //    Physical Maximum FFh (255d)
+    0x75,0x08,                  //    Report Size 8h (8d)
     0x95,0x01,                  //    Report Count 1
     0xb1,0x02,                      //    Feature (Variable)
     0xc0,                   //    End Collection
@@ -515,14 +499,14 @@ uint8_t const desc_hid_report[] =
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x7f,              //    Usage PID Pool Report
     0xa1,0x02,              //    Collection Datalink
-    0x85,0x03,                  //    Report ID 3
+    0x85,PID_POOL_REPORT_ID,
     0x09,0x80,                  //    Usage RAM Pool Size
-    0x75,0x10,                  //    Report Size 10h (16d)
+    0x75,0x08,                  //    Report Size 8h (8d)
     0x95,0x01,                  //    Report Count 1
     0x15,0x00,                  //    Logical Minimum 0
+    0x26,0xff,0x00,             //    Logical Maximum FFh (255d)
     0x35,0x00,                  //    Physical Minimum 0
-    0x27,0xff,0xff,0x00,0x00,   //    Logical Maximum FFFFh (65535d)
-    0x47,0xff,0xff,0x00,0x00,   //    Physical Maximum FFFFh (65535d)
+    0x46,0xff,0x00,             //    Physical Maximum FFh (255d)
     0xb1,0x02,                      //    Feature (Variable)
     0x09,0x83,                  //    Usage Simultaneous Effects Max
     0x26,0xff,0x00,             //    Logical Maximum FFh (255d)

@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+enum {
+	WHEEL_REPORT_ID					= 1,
+};
+
 struct wheel_report {
 	uint8_t  report_id;
 	int16_t  axis_x;
@@ -13,66 +17,105 @@ struct wheel_report {
 	uint8_t  buttons;
 } __attribute__ ((__packed__));
 
+enum {
+	SET_EFFECT_REPORT_ID 			= 1,
+	SET_ENVELOPE_REPORT_ID 			= 2,
+	SET_CONDITION_REPORT_ID 		= 3,
+	SET_PERIODIC_REPORT_ID 			= 4,
+	SET_CONSTANT_FORCE_REPORT_ID 	= 5,
+	SET_RAMP_FORCE_REPORT_ID 		= 6,
+	EFFECT_OPERATION_REPORT_ID 		= 10,
+	PID_BLOCK_FREE_REPORT_ID 		= 11,
+	PID_DEVICE_CONTROL_REPORT_ID 	= 12,
+	PID_DEVICE_GAIN_REPORT_ID 		= 13,
+};
+
+enum {
+	CREATE_NEW_EFFECT_REPORT_ID		= 1,
+	BLOCK_LOAD_REPORT_ID			= 2,
+	PID_POOL_REPORT_ID				= 3,
+};
+
+struct ffb_constant {
+    int8_t   magnitude;
+} __attribute__ ((__packed__));
+
+struct ffb_periodic {
+    int8_t   magnitude;
+    int8_t   offset;
+    uint8_t  phase;
+    uint8_t  period;
+} __attribute__ ((__packed__));
+
+struct ffb_ramp {
+    int8_t   ramp_start;
+    int8_t   ramp_end;
+} __attribute__ ((__packed__));
+
+struct ffb_envelope {
+    uint8_t  attack_level;
+    uint8_t  fade_level;
+    uint8_t  attack_time;
+    uint8_t  fade_time;
+} __attribute__ ((__packed__));
+
+struct ffb_condition {
+    int8_t   cp_offset;
+    int8_t   dead_band;
+    int8_t   positive_coefficient;
+    int8_t   negative_coefficient;
+    uint8_t  positive_saturation;
+    uint8_t  negative_saturation;
+} __attribute__ ((__packed__));
+
+struct ffb_effect_params {
+    uint8_t  effect_type;
+    uint8_t  gain;
+    uint8_t  duration;
+    uint8_t  start_delay;
+} __attribute__ ((__packed__));
+
 struct set_effect_report {
 	uint8_t  report_id;
 	uint8_t  effect_block_index;
-	uint8_t  effect_type;
-	int16_t  duration;
-	uint8_t  gain;
-	uint8_t  :8;
-	uint8_t  :8;
-	uint8_t  :8;
-	int16_t  start_delay;
+	uint8_t  payload[sizeof(struct ffb_effect_params)];
 } __attribute__ ((__packed__));
 
 struct set_envelope_report {
 	uint8_t  report_id;
 	uint8_t  effect_block_index;
-	int16_t  attack_level;
-	int16_t  fade_level;
-	int16_t  attack_time;
-	int16_t  fade_time;
+	uint8_t  payload[sizeof(struct ffb_envelope)];
 } __attribute__ ((__packed__));
 
 struct set_condition_report {
 	uint8_t  report_id;
 	uint8_t  effect_block_index;
 	uint8_t  parameter_block_offset;
-	int16_t  cp_offset;
-	int16_t  dead_band;
-	int16_t  positive_coefficient;
-	int16_t  negative_coefficient;
-	int16_t  positive_saturation;
-	int16_t  negative_saturation;
+	uint8_t  payload[sizeof(struct ffb_condition)];
 } __attribute__ ((__packed__));
 
 struct set_periodic_report {
 	uint8_t  report_id;
 	uint8_t  effect_block_index;
-	int8_t   magnitude;
-	int8_t   offset;
-	int8_t   phase;
-	int16_t  period;
+	uint8_t  payload[sizeof(struct ffb_periodic)];
 } __attribute__ ((__packed__));
 
 struct set_constant_force_report {
 	uint8_t  report_id;
 	uint8_t  effect_block_index;
-	int8_t   magnitude;
+	uint8_t  payload[sizeof(struct ffb_constant)];
 } __attribute__ ((__packed__));
 
 struct set_ramp_force_report {
 	uint8_t  report_id;
 	uint8_t  effect_block_index;
-	int8_t   ramp_start;
-	int8_t   ramp_end;
+	uint8_t  payload[sizeof(struct ffb_ramp)];
 } __attribute__ ((__packed__));
 
 struct effect_operation_report {
 	uint8_t  report_id;
 	uint8_t  effect_block_index;
 	uint8_t  effect_operation;
-	uint8_t  loop_count;
 } __attribute__ ((__packed__));
 
 struct pid_block_free_report {
@@ -99,12 +142,12 @@ struct pid_block_load_report {
 	uint8_t  report_id;
 	uint8_t  effect_block_index;
 	uint8_t  block_load_status;
-	uint16_t ram_pool_available;
+	uint8_t  ram_pool_available;
 } __attribute__ ((__packed__));
 
 struct pid_pool_report {
 	uint8_t  report_id;
-	uint16_t ram_pool_size;
+	uint8_t  ram_pool_size;
 	uint8_t  simultaneous_effects;
 	uint8_t  device_managed_pool :1;
 	uint8_t  shared_parameter_block :1;

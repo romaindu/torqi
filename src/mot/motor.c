@@ -8,25 +8,17 @@
 
 #include "sam.h"
 #include "torque.h"
-#include "printf.h"
-
-#define PHASE_A_ADC_IN  4
-#define PHASE_B_ADC_IN  5
 
 #define PWM_DT          30
 #define PWM_MIN         100
 #define ADC_SMPT        5
 #define ADC_LIMIT       1966
-
 #define ENC_STEP        1073741
 
-static struct {
-    volatile int32_t    angle;
-    uint8_t             enc;
-} g_motor = {
-    .angle = 0,
-    .enc = 0,
-};
+#define PHASE_A_ADC_IN  4
+#define PHASE_B_ADC_IN  5
+
+volatile int32_t encoder_count = 0;
 
 void motor_init(void)
 {
@@ -93,7 +85,7 @@ void motor_init(void)
                          EVSYS_CHANNEL_PATH_ASYNCHRONOUS;
 
     /* EVENT1: ADC_WINMON -> resynchronized -> TCC0_EV0 */
-    EVSYS->USER.reg = EVSYS_USER_USER(0x04) + EVSYS_USER_CHANNEL(2);
+    /*EVSYS->USER.reg = EVSYS_USER_USER(0x04) + EVSYS_USER_CHANNEL(2);
     EVSYS->CHANNEL.reg = EVSYS_CHANNEL_CHANNEL(1) +
                          EVSYS_CHANNEL_EVGEN(0x43) +
                          EVSYS_CHANNEL_EDGSEL_RISING_EDGE +
@@ -122,14 +114,14 @@ void motor_enable(void)
     while (TCC0->SYNCBUSY.bit.ENABLE);
 }
 
-int32_t motor_get_angle(void)
+int32_t motor_encoder_read(void)
 {
-    return g_motor.angle;
+    return encoder_count;
 }
 
-void motor_set_angle(int32_t angle)
+void motor_encoder_write(int32_t val)
 {
-    g_motor.angle = angle;
+    encoder_count = val;
 }
 
 static uint32_t map_timer_count(int32_t pwm)
@@ -154,6 +146,8 @@ static uint32_t map_timer_count(int32_t pwm)
 
 void ADC_Handler(void)
 {
+    PORT->Group[1].OUTSET.reg = (1 << 0);
+
     int32_t pwm;
 
     ADC->INTFLAG.reg = ADC_INTFLAG_RESRDY;
@@ -168,23 +162,26 @@ void ADC_Handler(void)
         TCC0->CCB[1].bit.CCB = map_timer_count(pwm);
         ADC->INPUTCTRL.bit.MUXPOS = PHASE_A_ADC_IN;
     }
+
+    PORT->Group[1].OUTCLR.reg = (1 << 0);
 }
 
 void EIC_Handler(void)
 {
+    PORT->Group[1].OUTSET.reg = (1 << 1);
+
+    static uint8_t enc_state = 0;
     const int8_t enc_table[16] = {0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0};
     int8_t s;
 
-    PORT->Group[1].OUTCLR.reg = (1 << 30);
-
     EIC->INTFLAG.reg = EIC_INTFLAG_EXTINT8 + EIC_INTFLAG_EXTINT15;
 
-    g_motor.enc <<= 2;
-    g_motor.enc |= (PORT->Group[0].IN.reg & (PORT_PA27 + PORT_PA28)) >> PIN_PA27;
-    s = enc_table[g_motor.enc & 0b1111];
+    enc_state <<= 2;
+    enc_state |= (PORT->Group[0].IN.reg & (PORT_PA27 + PORT_PA28)) >> PIN_PA27;
+    s = enc_table[enc_state & 0b1111];
 
-    torque_on_encoder(s);
-    g_motor.angle += ENC_STEP*s;
+    torque_on_encoder_count(s);
+    encoder_count += s;
 
-    PORT->Group[1].OUTSET.reg = (1 << 30);
+    PORT->Group[1].OUTCLR.reg = (1 << 1);
 }

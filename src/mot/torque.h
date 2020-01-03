@@ -10,7 +10,7 @@ enum {
 };
 
 void torque_set(int8_t trq);
-void torque_on_encoder(int8_t s);
+void torque_on_encoder_count(int8_t s);
 int32_t torque_on_adc_sample(int32_t ph, int32_t adc);
 
 #endif

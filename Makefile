@@ -17,7 +17,9 @@ lib/printf/printf.c \
 \
 src/com/debug.c \
 src/usb/descriptors.c \
+src/usb/requests.c \
 src/ffb/ffb.c \
+src/ffb/effects.c \
 src/mot/motor.c \
 src/mot/controller.c \
 src/mot/torque.c \

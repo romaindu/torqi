@@ -12,9 +12,9 @@
 
 static struct {
     struct pi_controller    pic[PHASES];
-    volatile int16_t        tgt[PHASES];
-    volatile int8_t         phi[PHASES];
-    volatile int8_t         trq;
+    int16_t                 tgt[PHASES];
+    int8_t                  phi[PHASES];
+    int8_t                  trq;
     int16_t                 sine[ECNT_PER_MAGREV];
 } g_torque = {
     .pic = {0},
@@ -33,24 +33,12 @@ static struct {
               0xc3d1, 0xca80, 0xd184, 0xd8d1, 0xe05c, 0xe819, 0xeffc, 0xf7f8 },
 };
 
-static inline void compute_current_targets(void)
-{
-    int32_t a;
-
-    for (int ph = 0; ph < PHASES; ++ph) {
-        a = g_torque.trq*g_torque.sine[g_torque.phi[ph]];
-        g_torque.tgt[ph] = 2048 + (a >> 11);
-    }
-}
-
 void torque_set(int8_t trq)
 {
     g_torque.trq = trq;
-
-    return compute_current_targets();
 }
 
-void torque_on_encoder(int8_t s)
+void torque_on_encoder_count(int8_t s)
 {
     int8_t a;
 
@@ -62,11 +50,13 @@ void torque_on_encoder(int8_t s)
             a = ECNT_PER_MAGREV-1;
         g_torque.phi[ph] = a;
     }
-
-    return compute_current_targets();
 }
 
 int32_t torque_on_adc_sample(int32_t ph, int32_t adc)
 {
-    return controller_compute(&g_torque.pic[ph], g_torque.tgt[ph] - adc);
+    int32_t tgt;
+
+    tgt = ((2048 << 11) + g_torque.trq*g_torque.sine[g_torque.phi[ph]]) >> 11;
+
+    return controller_compute(&g_torque.pic[ph], tgt - adc);
 }
