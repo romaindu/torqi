@@ -70,14 +70,14 @@ _crt0:
 	ldr		r1, =__bss
 	ldr		r2, =__ebss
 2:	cmp		r1, r2
-	bge 	3f
-	str 	r0, [r1]
+	bge		3f
+	str		r0, [r1]
 	add		r1, #4
-	b 		2b
+	b		2b
 3:	/* Branch to main */
 	ldr		r0, =main
 	blx		r0
-	b 		.
+	b		.
 
 
 .thumb_func
