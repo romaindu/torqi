@@ -69,11 +69,17 @@ void setup_clocks(void)
                         GCLK_CLKCTRL_ID_USB;
     PM->APBBMASK.bit.USB_ = 1;
 
-    /* TCC0 runs on GCLK0 (48MHz) */
+    /* TCC0 & TCC1 run on GCLK0 (48MHz) */
     GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
                         GCLK_CLKCTRL_GEN_GCLK0 +
                         GCLK_CLKCTRL_ID_TCC0_TCC1;
     PM->APBCMASK.bit.TCC0_ = 1;
+
+    /* TCC2 & TC3 run on GCLK0 (48MHz) */
+    GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
+                        GCLK_CLKCTRL_GEN_GCLK0 +
+                        GCLK_CLKCTRL_ID_TCC2_TC3;
+    PM->APBCMASK.bit.TC3_ = 1;
 
     /* ADC runs on GCLK1 (8MHz) */
     GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
@@ -92,6 +98,12 @@ void setup_clocks(void)
                         GCLK_CLKCTRL_GEN_GCLK0 +
                         GCLK_CLKCTRL_ID_EVSYS_1;
     PM->APBCMASK.bit.EVSYS_ = 1;
+
+    /* DAC for FFB debug (32 kHz) */
+    GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
+                        GCLK_CLKCTRL_GEN_GCLK2 +
+                        GCLK_CLKCTRL_ID_DAC;
+    PM->APBCMASK.bit.DAC_ = 1;
 }
 
 static inline void pin_mux_wrconfig(const int pinmux)
@@ -130,4 +142,7 @@ void setup_ports(void)
 
     pin_mux_wrconfig(PINMUX_PA27A_EIC_EXTINT15);
     pin_mux_wrconfig(PINMUX_PA28A_EIC_EXTINT8);
+
+    /* DAC for FFB debug on PA02 */
+    pin_mux_wrconfig(PINMUX_PA02B_DAC_VOUT);
 }

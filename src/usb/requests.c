@@ -10,6 +10,14 @@
 
 #include "ffb/ffb.h"
 
+void printmem(void const *buf, uint16_t count)
+{
+    for (int i = 0; i < count; ++i) {
+        printf("%02x ", ((char*)(buf))[i]);
+    }
+    printf("\n");
+}
+
 uint16_t tud_hid_get_report_cb(
     uint8_t report_id,
     hid_report_type_t report_type,
@@ -21,30 +29,15 @@ uint16_t tud_hid_get_report_cb(
     (void) buffer;
     (void) reqlen;
 
-    //printf("GET REPORT ID = %d, TYPE = %d\n", report_id, report_type);
-
-    static uint8_t bi = 0;
+    printf("GET REPORT ID = %d, TYPE = %d\n", report_id, report_type);
 
     if (report_type == HID_REPORT_TYPE_FEATURE) {
-        if (report_id == 3 && reqlen >= sizeof(struct pid_pool_report)) {
-            struct pid_pool_report * sbuf = (struct pid_pool_report *)buffer;
-            sbuf->report_id = 3;
-            sbuf->ram_pool_size = 100;
-            sbuf->simultaneous_effects = 8;
-            sbuf->device_managed_pool = 1;
-            sbuf->shared_parameter_block = 0;
-            //printmem(buffer, sizeof(struct pid_pool_report));
-            return sizeof(struct pid_pool_report);
+        if (report_id == PID_POOL_REPORT_ID) {
+            return ffb_on_get_pid_pool_report(buffer);
         }
 
-        if (report_id == 2 && reqlen >= sizeof(struct pid_block_load_report)) {
-            struct pid_block_load_report * sbuf = (struct pid_block_load_report *)buffer;
-            sbuf->report_id = 2;
-            sbuf->effect_block_index = ++bi;
-            sbuf->block_load_status = 1;
-            sbuf->ram_pool_available = 90;
-            //printmem(buffer, sizeof(struct pid_block_load_report));
-            return sizeof(struct pid_block_load_report);
+        if (report_id == BLOCK_LOAD_REPORT_ID) {
+            return ffb_on_get_pid_block_load_report(buffer);
         }
     }
 

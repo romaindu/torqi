@@ -14,14 +14,6 @@
 #include "usb/reports.h"
 #include "com/serial.h"
 
-void printmem(void const *buf, uint16_t count)
-{
-    for (int i = 0; i < count; ++i) {
-        printf("%02x ", ((char*)(buf))[i]);
-    }
-    printf("\n");
-}
-
 static struct wheel_report wrp = {.report_id = 1};
 
 int main(void)
@@ -37,12 +29,15 @@ int main(void)
     tusb_init();
 
     motor_enable();
+    ffb_reset();
+
+    printf("\n\n====== RESET ======\n");
 
     PORT->Group[1].DIRSET.reg = (1 << 0) + (1 << 1) + (1 << 30);
 
     for (;;) {
     	tud_task();
-        wrp.axis_x = motor_encoder_read();
+        wrp.axis_x = motor_encoder_read() << 4;
         tud_hid_report(0, &wrp, sizeof(wrp));
     }
 

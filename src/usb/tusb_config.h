@@ -8,11 +8,6 @@
 #define CFG_TUSB_RHPORT0_MODE   OPT_MODE_DEVICE
 #define CFG_TUSB_OS             OPT_OS_NONE
 
-#define CFG_TUD_CDC             1
-#define CFG_TUD_CDC_EPSIZE      64
-#define CFG_TUD_CDC_TX_BUFSIZE  CFG_TUD_CDC_EPSIZE
-#define CFG_TUD_CDC_RX_BUFSIZE  CFG_TUD_CDC_EPSIZE
-
 #define CFG_TUD_HID             1
 #define CFG_TUD_HID_BUFSIZE     16
 

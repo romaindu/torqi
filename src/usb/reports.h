@@ -61,9 +61,9 @@ struct ffb_envelope {
 
 struct ffb_condition {
     int8_t   cp_offset;
-    int8_t   dead_band;
     int8_t   positive_coefficient;
     int8_t   negative_coefficient;
+    int8_t   dead_band;
     uint8_t  positive_saturation;
     uint8_t  negative_saturation;
 } __attribute__ ((__packed__));
@@ -72,13 +72,13 @@ struct ffb_effect_params {
     uint8_t  effect_type;
     uint8_t  gain;
     uint8_t  duration;
-    uint8_t  start_delay;
 } __attribute__ ((__packed__));
 
 struct set_effect_report {
 	uint8_t  report_id;
 	uint8_t  effect_block_index;
 	uint8_t  payload[sizeof(struct ffb_effect_params)];
+	uint8_t	 ignored[3];
 } __attribute__ ((__packed__));
 
 struct set_envelope_report {

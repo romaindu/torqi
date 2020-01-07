@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define FFB_MAX_EFFECTS     8
+
 enum effect_operation {
     EFFECT_START        = 1,
     EFFECT_START_SOLO   = 2,
@@ -25,18 +27,21 @@ enum block_load {
 };
 
 void ffb_init(void);
+void ffb_reset(void);
 
-void ffb_on_set_effect_report(uint8_t const* report);
-void ffb_on_set_envelope_report(uint8_t const* report);
-void ffb_on_set_condition_report(uint8_t const* report);
-void ffb_on_set_periodic_report(uint8_t const* report);
-void ffb_on_set_constant_force_report(uint8_t const* report);
-void ffb_on_set_ramp_force_report(uint8_t const* report);
-void ffb_on_create_new_effect_report(uint8_t const* report);
-void ffb_on_effect_operation_report(uint8_t const* report);
-void ffb_on_pid_block_free_report(uint8_t const* report);
-void ffb_on_device_control_report(uint8_t const* report);
-void ffb_on_device_gain_report(uint8_t const* report);
+void ffb_on_set_effect_report(uint8_t const *report);
+void ffb_on_set_envelope_report(uint8_t const *report);
+void ffb_on_set_condition_report(uint8_t const *report);
+void ffb_on_set_periodic_report(uint8_t const *report);
+void ffb_on_set_constant_force_report(uint8_t const *report);
+void ffb_on_set_ramp_force_report(uint8_t const *report);
+void ffb_on_create_new_effect_report(uint8_t const *report);
+void ffb_on_effect_operation_report(uint8_t const *report);
+void ffb_on_pid_block_free_report(uint8_t const *report);
+void ffb_on_device_control_report(uint8_t const *report);
+void ffb_on_device_gain_report(uint8_t const *report);
+int ffb_on_get_pid_pool_report(uint8_t *report);
+int ffb_on_get_pid_block_load_report(uint8_t *report);
 
 
 #endif
