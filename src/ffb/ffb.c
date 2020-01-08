@@ -17,7 +17,7 @@
 #include "usb/reports.h"
 
 #define FFB_POSITION_COEF       5
-#define FFB_SPEED_COEF          500
+#define FFB_SPEED_COEF          1638
 
 static struct ffb_effect pid_effects_pool[FFB_MAX_EFFECTS] = {0};
 
@@ -286,7 +286,7 @@ void TC3_Handler(void)
     enc_samples[1] = enc_samples[0];
     enc_samples[0] = motor_encoder_read();
 
-    /* Compute pos, speed and acceleration coeficients */
+    /* Compute pos, speed coeficients */
     pos   = signed_saturate(enc_samples[0]*FFB_POSITION_COEF, 16);
     speed = signed_saturate((enc_samples[0]-enc_samples[1])*FFB_SPEED_COEF, 16);
 

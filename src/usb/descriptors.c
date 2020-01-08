@@ -26,7 +26,7 @@ tusb_desc_device_t const desc_device =
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
 
     .idVendor           = 0x2000,
-    .idProduct          = 0x2025,
+    .idProduct          = 0x2027,
     .bcdDevice          = 0x0100,
 
     .iManufacturer      = 0x01,
@@ -98,6 +98,8 @@ uint8_t const desc_hid_report[] =
     0x09,0x25,                  //    Usage Effect Type
     0xa1,0x02,                  //    Collection Datalink
     0x09,0x26,                      //    Usage ET Constant Force
+    0x09,0x27,                      //    Usage ET Ramp
+    0x09,0x30,                      //    Usage ET Square
     0x09,0x31,                      //    Usage ET Sine
     0x09,0x32,                      //    Usage ET Triangle
     0x09,0x33,                      //    Usage ET Sawtooth Up
@@ -106,9 +108,9 @@ uint8_t const desc_hid_report[] =
     0x09,0x41,                      //    Usage ET Damper
     0x09,0x43,                      //    Usage ET Friction
     0x15,0x01,                      //    Logical Minimum 1
-    0x25,0x08,                      //    Logical Maximum 8h (8d)
+    0x25,0x0a,                      //    Logical Maximum Ah (10d)
     0x35,0x01,                      //    Physical Minimum 1
-    0x45,0x08,                      //    Physical Maximum 8h (8d)
+    0x45,0x0a,                      //    Physical Maximum Ah (10d)
     0x75,0x08,                      //    Report Size 8
     0x95,0x01,                      //    Report Count 1
     0x91,0x00,                      //    Output
@@ -436,6 +438,8 @@ uint8_t const desc_hid_report[] =
     0x09,0x25,                  //    Usage Effect Type
     0xa1,0x02,                  //    Collection Datalink
     0x09,0x26,                      //    Usage ET Constant Force
+    0x09,0x27,                      //    Usage ET Ramp
+    0x09,0x30,                      //    Usage ET Square
     0x09,0x31,                      //    Usage ET Sine
     0x09,0x32,                      //    Usage ET Triangle
     0x09,0x33,                      //    Usage ET Sawtooth Up
@@ -444,9 +448,9 @@ uint8_t const desc_hid_report[] =
     0x09,0x41,                      //    Usage ET Damper
     0x09,0x43,                      //    Usage ET Friction
     0x15,0x01,                      //    Logical Minimum 1
-    0x25,0x08,                      //    Logical Maximum 8h (8d)
+    0x25,0x0a,                      //    Logical Maximum Ah (10d)
     0x35,0x01,                      //    Physical Minimum 1
-    0x45,0x08,                      //    Physical Maximum 8h (8d)
+    0x45,0x0a,                      //    Physical Maximum Ah (10d)
     0x75,0x08,                      //    Report Size 8
     0x95,0x01,                      //    Report Count 1
     0xb1,0x00,                          //    Feature

@@ -29,7 +29,7 @@ uint16_t tud_hid_get_report_cb(
     (void) buffer;
     (void) reqlen;
 
-    printf("GET REPORT ID = %d, TYPE = %d\n", report_id, report_type);
+    //printf("GET REPORT ID = %d, TYPE = %d\n", report_id, report_type);
 
     if (report_type == HID_REPORT_TYPE_FEATURE) {
         if (report_id == PID_POOL_REPORT_ID) {

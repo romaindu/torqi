@@ -48,8 +48,8 @@ struct ffb_periodic {
 } __attribute__ ((__packed__));
 
 struct ffb_ramp {
-    int8_t   ramp_start;
-    int8_t   ramp_end;
+    int8_t   start;
+    int8_t   end;
 } __attribute__ ((__packed__));
 
 struct ffb_envelope {

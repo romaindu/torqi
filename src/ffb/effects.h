@@ -8,6 +8,8 @@
 enum effect_type {
     NOEFFECT,
     CONSTANT_FORCE,
+    RAMP,
+    SQUARE,
     SINE,
     TRIANGLE,
     SAWTOOTH_UP,
