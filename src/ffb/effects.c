@@ -8,7 +8,7 @@
 
 #include "util.h"
 
-#define FRICTION_FRACTION_OF_MAXSPEED   10
+#define FRICTION_FRACTION_OF_MAXSPEED   20
 
 static int8_t compute_constant(struct ffb_effect *ffbe)
 {
@@ -173,7 +173,7 @@ int8_t effect_compute(
             force = compute_condition(ffbe, fpos);
             break;
         case DAMPER:
-            force = compute_condition(ffbe, fspeed);
+            force = compute_condition(ffbe, fspeed >> 7);
             break;
         case FRICTION:
             force = compute_condition(ffbe, friction_q(fspeed));

@@ -17,7 +17,7 @@
 #include "usb/reports.h"
 
 #define FFB_POSITION_COEF       5
-#define FFB_SPEED_COEF          1638
+#define FFB_SPEED_COEF          819
 
 static struct ffb_effect pid_effects_pool[FFB_MAX_EFFECTS] = {0};
 
@@ -179,6 +179,7 @@ void ffb_on_create_new_effect_report(uint8_t const *report)
             __FFB_LEAVE_CRITICAL();
             block_load_report.effect_block_index = i + 1;
             block_load_report.block_load_status = BLOCK_LOAD_SUCCESS;
+            printf("New effect %d is type %d\n", i+1, report[1]);
             return;
         }
     }
@@ -273,7 +274,7 @@ int ffb_on_get_pid_block_load_report(uint8_t *report)
 
 void TC3_Handler(void)
 {
-    static int32_t enc_samples[2];
+    static int32_t enc_samples[3];
     uint8_t i;
     int16_t pos, speed;
     int32_t force = 0;
@@ -283,12 +284,13 @@ void TC3_Handler(void)
     TC3->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;
 
     /* Sample the new encoder value */
+    enc_samples[2] = enc_samples[1];
     enc_samples[1] = enc_samples[0];
     enc_samples[0] = motor_encoder_read();
 
-    /* Compute pos, speed coeficients */
+    /* Compute pos, speed coefficients */
     pos   = signed_saturate(enc_samples[0]*FFB_POSITION_COEF, 16);
-    speed = signed_saturate((enc_samples[0]-enc_samples[1])*FFB_SPEED_COEF, 16);
+    speed = signed_saturate((enc_samples[0]-enc_samples[2])*FFB_SPEED_COEF, 16);
 
     /* Compute individual effects */
     for (i = 0; i < FFB_MAX_EFFECTS; ++i)

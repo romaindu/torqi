@@ -37,7 +37,7 @@ int main(void)
 
     for (;;) {
     	tud_task();
-        wrp.axis_x = motor_encoder_read() << 4;
+        wrp.axis_x = motor_encoder_read() << 3;
         tud_hid_report(0, &wrp, sizeof(wrp));
     }
 
