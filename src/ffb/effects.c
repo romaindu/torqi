@@ -153,12 +153,12 @@ static int8_t compute_periodic(struct ffb_effect *ffbe, int8_t(*lut)(uint8_t))
     return constrain(force, -127, 127);
 }
 
-static int16_t friction_q(int16_t fspeed)
+static int16_t friction(int16_t fspeed)
 {
-    return signed_saturate((fspeed >> 7)*FRICTION_FRACTION_OF_MAXSPEED, 9);
+    return signed_saturate(fspeed*FRICTION_FRACTION_OF_MAXSPEED, 16);
 }
 
-static int8_t compute_condition(struct ffb_effect *ffbe, int16_t q)
+static int8_t compute_condition(struct ffb_effect *ffbe, int32_t q)
 {
     int32_t force = 0;
     int32_t lth, hth;
@@ -176,17 +176,14 @@ static int8_t compute_condition(struct ffb_effect *ffbe, int16_t q)
         hsat = 127;
 
     if (q < lth)
-        force = ffbe->condition.negative_coefficient*(q - lth) >> 8;
+        force = ffbe->condition.negative_coefficient*(q - lth) >> 15;
     else if (q > hth)
-        force = ffbe->condition.positive_coefficient*(q - hth) >> 8;
+        force = ffbe->condition.positive_coefficient*(q - hth) >> 15;
 
     return constrain(force, lsat, hsat);
 }
 
-int8_t effect_compute(
-    struct ffb_effect *ffbe,
-    int16_t fpos,
-    int16_t fspeed)
+int8_t effect_compute(struct ffb_effect *ffbe, int32_t fpos, int32_t fspeed)
 {
     int32_t force = 0;
 
@@ -224,10 +221,10 @@ int8_t effect_compute(
             force = compute_condition(ffbe, fpos);
             break;
         case DAMPER:
-            force = compute_condition(ffbe, fspeed >> 7);
+            force = compute_condition(ffbe, fspeed);
             break;
         case FRICTION:
-            force = compute_condition(ffbe, friction_q(fspeed));
+            force = compute_condition(ffbe, friction(fspeed));
             break;
         default:
             break;

@@ -48,9 +48,6 @@ struct ffb_effect {
     };
 };
 
-int8_t effect_compute(
-    struct ffb_effect *ffbe,
-    int16_t fpos,
-    int16_t fspeed);
+int8_t effect_compute(struct ffb_effect *ffbe, int32_t fpos, int32_t fspeed);
 
 #endif
