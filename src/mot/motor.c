@@ -13,7 +13,6 @@
 #define PWM_MIN         100
 #define ADC_SMPT        5
 #define ADC_LIMIT       1966
-#define ENC_STEP        1073741
 
 #define PHASE_A_ADC_IN  4
 #define PHASE_B_ADC_IN  5
@@ -85,7 +84,7 @@ void motor_init(void)
                          EVSYS_CHANNEL_PATH_ASYNCHRONOUS;
 
     /* EVENT1: ADC_WINMON -> resynchronized -> TCC0_EV0 */
-    /*EVSYS->USER.reg = EVSYS_USER_USER(0x04) + EVSYS_USER_CHANNEL(2);
+    EVSYS->USER.reg = EVSYS_USER_USER(0x04) + EVSYS_USER_CHANNEL(2);
     EVSYS->CHANNEL.reg = EVSYS_CHANNEL_CHANNEL(1) +
                          EVSYS_CHANNEL_EVGEN(0x43) +
                          EVSYS_CHANNEL_EDGSEL_RISING_EDGE +
@@ -100,6 +99,16 @@ void motor_init(void)
     EIC->INTFLAG.reg = EIC_INTFLAG_EXTINT8 + EIC_INTFLAG_EXTINT15;
     NVIC_EnableIRQ(EIC_IRQn);
     EIC->CTRL.bit.ENABLE = 1;
+}
+
+void motor_fault(void)
+{
+    /* Generate a software event to trigger a non recoverable fault */
+    EVSYS->CHANNEL.reg = EVSYS_CHANNEL_CHANNEL(1) +
+                         EVSYS_CHANNEL_EVGEN(0x43) +
+                         EVSYS_CHANNEL_EDGSEL_RISING_EDGE +
+                         EVSYS_CHANNEL_PATH_RESYNCHRONIZED +
+                         EVSYS_CHANNEL_SWEVT;
 }
 
 void motor_disable(void)
