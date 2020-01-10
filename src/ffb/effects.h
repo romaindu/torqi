@@ -31,19 +31,21 @@ struct ffb_flags {
 };
 
 struct ffb_effect {
-    struct ffb_flags         flags;
-    uint8_t                  local_time;
-    struct ffb_effect_params params;
+    struct ffb_flags                    flags;
+    uint8_t                             local_time;
+    uint16_t                            phi;
+    struct ffb_effect_params            params;
     union {
-        struct ffb_constant  constant;
-        struct ffb_periodic  periodic;
-        struct ffb_ramp      ramp;
-        struct ffb_condition condition;
+        struct {
+            union {
+                struct ffb_constant     constant;
+                struct ffb_periodic     periodic;
+            };
+            struct ffb_envelope         envelope;
+        };
+        struct ffb_ramp                 ramp;
+        struct ffb_condition            condition;
     };
-    union {
-        struct ffb_envelope  envelope;
-    };
-    uint32_t                 phi;
 };
 
 int8_t effect_compute(

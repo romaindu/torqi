@@ -10,6 +10,7 @@
 
 #include "sam.h"
 #include "util.h"
+#include "printf.h"
 
 #include "mot/motor.h"
 #include "mot/torque.h"
@@ -17,7 +18,7 @@
 #include "usb/reports.h"
 
 #define FFB_POSITION_COEF       5
-#define FFB_SPEED_COEF          819
+#define FFB_SPEED_COEF          81
 
 static struct ffb_effect pid_effects_pool[FFB_MAX_EFFECTS] = {0};
 
@@ -273,21 +274,22 @@ int ffb_on_get_pid_block_load_report(uint8_t *report)
 
 void TC3_Handler(void)
 {
-    static int32_t enc_samples[3];
+    static int16_t enc_samples[8];
+    static uint8_t enc_idx = 0;
     uint8_t i;
-    int16_t pos, speed;
+    int32_t pos, speed;
     int32_t force = 0;
 
     TC3->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;
 
     /* Sample the new encoder value */
-    enc_samples[2] = enc_samples[1];
-    enc_samples[1] = enc_samples[0];
-    enc_samples[0] = motor_encoder_read();
+    pos   = enc_samples[enc_idx & 0x7] = motor_encoder_read();
+    speed = enc_samples[enc_idx & 0x7] - enc_samples[(enc_idx + 1) & 0x7];
+    enc_idx++;
 
     /* Compute pos, speed coefficients */
-    pos   = signed_saturate(enc_samples[0]*FFB_POSITION_COEF, 16);
-    speed = signed_saturate((enc_samples[0]-enc_samples[2])*FFB_SPEED_COEF, 16);
+    pos   = signed_saturate(pos*FFB_POSITION_COEF, 16);
+    speed = signed_saturate(speed*FFB_SPEED_COEF, 16);
 
     /* Compute individual effects */
     for (i = 0; i < FFB_MAX_EFFECTS; ++i)

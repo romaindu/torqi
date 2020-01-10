@@ -11,23 +11,21 @@
 
 #define FRICTION_FRACTION_OF_MAXSPEED   20
 
-static int8_t compute_constant(struct ffb_effect *ffbe)
-{
-    if (!ffbe->flags.constant)
-        return 0;
-
-    return ffbe->constant.magnitude;
-}
-
 static int8_t compute_ramp(struct ffb_effect *ffbe)
 {
     int32_t force, slope;
 
-    if (!ffbe->flags.ramp)
+    if (!ffbe->flags.ramp || !ffbe->flags.params)
         return 0;
 
-    slope = (1 << 16)*(ffbe->ramp.end - ffbe->ramp.start)/ffbe->params.duration;
-    force = ffbe->ramp.start + (slope*ffbe->local_time >> 16);
+    if (ffbe->params.duration == 255)
+        return ffbe->ramp.start;
+
+    if (ffbe->params.duration == 0)
+        return ffbe->ramp.end;
+
+    slope = (1 << 8)*(ffbe->ramp.end - ffbe->ramp.start)/ffbe->params.duration;
+    force = ffbe->ramp.start + (slope*ffbe->local_time >> 8);
 
     return constrain(force, -127, 127);
 }
@@ -83,6 +81,56 @@ static int8_t triangle(uint8_t i)
     return r;
 }
 
+static int8_t compute_envelope(struct ffb_effect *ffbe, int8_t magnitude)
+{
+    uint8_t t_atck, t_fade;
+    int8_t  e_atck, e_fade;
+    int32_t envlp;
+    int32_t slope;
+
+    if (!ffbe->flags.params || !ffbe->flags.envelope)
+        return magnitude;
+
+    e_atck = ffbe->envelope.attack_level;
+    e_fade = ffbe->envelope.fade_level;
+
+    if (magnitude < 0) {
+        e_atck = -1*e_atck;
+        e_fade = -1*e_fade;
+    }
+
+    t_atck = ffbe->envelope.attack_time;
+
+    if (ffbe->params.duration == 255)
+        t_fade = 255;
+    else if (ffbe->envelope.fade_time > ffbe->params.duration - t_atck)
+        t_fade = t_atck;
+    else
+        t_fade = ffbe->params.duration - ffbe->envelope.fade_time;
+
+    if (ffbe->local_time < t_atck) {
+        slope = (magnitude - e_atck)*(1 << 8)/ffbe->envelope.attack_time;
+        envlp = e_atck + (slope*ffbe->local_time >> 8);
+    }
+    else if (ffbe->local_time > t_fade) {
+        slope = (e_fade - magnitude)*(1 << 8)/ffbe->envelope.fade_time;
+        envlp = magnitude + (slope*(ffbe->local_time - t_fade) >> 8);
+    }
+    else {
+        envlp = magnitude;
+    }
+
+    return envlp;
+}
+
+static int8_t compute_constant(struct ffb_effect *ffbe)
+{
+    if (!ffbe->flags.constant)
+        return 0;
+
+    return compute_envelope(ffbe, ffbe->constant.magnitude);
+}
+
 static int8_t compute_periodic(struct ffb_effect *ffbe, int8_t(*lut)(uint8_t))
 {
     int32_t force;
@@ -94,11 +142,13 @@ static int8_t compute_periodic(struct ffb_effect *ffbe, int8_t(*lut)(uint8_t))
     if (ffbe->local_time == 0)
         ffbe->phi = 0;
 
-    force = lut((ffbe->periodic.phase + (ffbe->phi >> 16)) & 0xFF);
-    force = (ffbe->periodic.magnitude*force >> 7) + ffbe->periodic.offset;
+    force = lut((ffbe->periodic.phase + (ffbe->phi >> 8)) & 0xFF);
+    force = compute_envelope(ffbe, ffbe->periodic.magnitude)*force >> 7;
+    force += ffbe->periodic.offset;
 
     /* Phase accumulator */
-    ffbe->phi += (1 << 24)/ffbe->periodic.period;
+    if (ffbe->periodic.period > 0)
+        ffbe->phi += 0xffff/ffbe->periodic.period;
 
     return constrain(force, -127, 127);
 }
@@ -133,38 +183,6 @@ static int8_t compute_condition(struct ffb_effect *ffbe, int16_t q)
     return constrain(force, lsat, hsat);
 }
 
-static int8_t compute_envelope(struct ffb_effect *ffbe, int8_t force)
-{
-    uint8_t t1, t2;
-    int32_t envelope;
-    int32_t slope;
-
-    if (!ffbe->flags.envelope)
-        return force;
-
-    t1 = ffbe->envelope.attack_time;
-
-    if (ffbe->envelope.fade_time > ffbe->params.duration)
-        t2 = t1;
-    else
-        t2 = ffbe->params.duration - ffbe->envelope.fade_time;
-
-    if (t2 < t1)
-        t2 = t1;
-
-    if (ffbe->local_time <= t1) {
-        slope = (127 - ffbe->envelope.attack_level)*(1 << 16)/ffbe->envelope.attack_time;
-        envelope = ffbe->envelope.attack_level + (slope*ffbe->local_time >> 16);
-    } else if (ffbe->local_time >= t2) {
-        slope = (ffbe->envelope.fade_level - 127)*(1 << 16)/ffbe->envelope.fade_time;
-        envelope = 127 + (slope*(ffbe->local_time - t2) >> 16);
-    } else {
-        envelope = 127;
-    }
-
-    return force*envelope >> 7;
-}
-
 int8_t effect_compute(
     struct ffb_effect *ffbe,
     int16_t fpos,
@@ -183,31 +201,24 @@ int8_t effect_compute(
     switch (ffbe->params.effect_type) {
         case CONSTANT_FORCE:
             force = compute_constant(ffbe);
-            force = compute_envelope(ffbe, force);
             break;
         case RAMP:
             force = compute_ramp(ffbe);
-            force = compute_envelope(ffbe, force);
             break;
         case SQUARE:
             force = compute_periodic(ffbe, square);
-            force = compute_envelope(ffbe, force);
             break;
         case SINE:
             force = compute_periodic(ffbe, sine);
-            force = compute_envelope(ffbe, force);
             break;
         case TRIANGLE:
             force = compute_periodic(ffbe, triangle);
-            force = compute_envelope(ffbe, force);
             break;
         case SAWTOOTH_UP:
             force = compute_periodic(ffbe, sawtooth_up);
-            force = compute_envelope(ffbe, force);
             break;
         case SAWTOOTH_DOWN:
             force = compute_periodic(ffbe, sawtooth_down);
-            force = compute_envelope(ffbe, force);
             break;
         case SPRING:
             force = compute_condition(ffbe, fpos);
