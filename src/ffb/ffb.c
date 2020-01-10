@@ -9,10 +9,10 @@
 #include <string.h>
 
 #include "sam.h"
-#include "printf.h"
 #include "util.h"
 
 #include "mot/motor.h"
+#include "mot/torque.h"
 #include "ffb/effects.h"
 #include "usb/reports.h"
 
@@ -64,7 +64,7 @@ void ffb_init(void)
     DAC->CTRLB.reg = DAC_CTRLB_REFSEL_AVCC + DAC_CTRLB_EOEN;
     DAC->CTRLA.bit.ENABLE = 1;
 
-    NVIC_SetPriority(TC3_IRQn, 3);
+    NVIC_SetPriority(TC3_IRQn, 2);
     NVIC_EnableIRQ(TC3_IRQn);
 }
 
@@ -179,7 +179,6 @@ void ffb_on_create_new_effect_report(uint8_t const *report)
             __FFB_LEAVE_CRITICAL();
             block_load_report.effect_block_index = i + 1;
             block_load_report.block_load_status = BLOCK_LOAD_SUCCESS;
-            printf("New effect %d is type %d\n", i+1, report[1]);
             return;
         }
     }
@@ -279,8 +278,6 @@ void TC3_Handler(void)
     int16_t pos, speed;
     int32_t force = 0;
 
-    PORT->Group[1].OUTCLR.reg = (1 << 30);
-
     TC3->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;
 
     /* Sample the new encoder value */
@@ -302,5 +299,5 @@ void TC3_Handler(void)
     /* DAC debug FFB output */
     DAC->DATA.reg = (force + 128) << 2;
 
-    PORT->Group[1].OUTSET.reg = (1 << 30);
+    torque_set(force);
 }

@@ -7,6 +7,7 @@
 #include "effects.h"
 
 #include "util.h"
+#include "printf.h"
 
 #define FRICTION_FRACTION_OF_MAXSPEED   20
 
@@ -132,12 +133,44 @@ static int8_t compute_condition(struct ffb_effect *ffbe, int16_t q)
     return constrain(force, lsat, hsat);
 }
 
+static int8_t compute_envelope(struct ffb_effect *ffbe, int8_t force)
+{
+    uint8_t t1, t2;
+    int32_t envelope;
+    int32_t slope;
+
+    if (!ffbe->flags.envelope)
+        return force;
+
+    t1 = ffbe->envelope.attack_time;
+
+    if (ffbe->envelope.fade_time > ffbe->params.duration)
+        t2 = t1;
+    else
+        t2 = ffbe->params.duration - ffbe->envelope.fade_time;
+
+    if (t2 < t1)
+        t2 = t1;
+
+    if (ffbe->local_time <= t1) {
+        slope = (127 - ffbe->envelope.attack_level)*(1 << 16)/ffbe->envelope.attack_time;
+        envelope = ffbe->envelope.attack_level + (slope*ffbe->local_time >> 16);
+    } else if (ffbe->local_time >= t2) {
+        slope = (ffbe->envelope.fade_level - 127)*(1 << 16)/ffbe->envelope.fade_time;
+        envelope = 127 + (slope*(ffbe->local_time - t2) >> 16);
+    } else {
+        envelope = 127;
+    }
+
+    return force*envelope >> 7;
+}
+
 int8_t effect_compute(
     struct ffb_effect *ffbe,
     int16_t fpos,
     int16_t fspeed)
 {
-    int8_t force = 0;
+    int32_t force = 0;
 
     /* Check if effect is valid */
     if (!ffbe->flags.allocated || !ffbe->flags.started || !ffbe->flags.params)
@@ -150,24 +183,31 @@ int8_t effect_compute(
     switch (ffbe->params.effect_type) {
         case CONSTANT_FORCE:
             force = compute_constant(ffbe);
+            force = compute_envelope(ffbe, force);
             break;
         case RAMP:
             force = compute_ramp(ffbe);
+            force = compute_envelope(ffbe, force);
             break;
         case SQUARE:
             force = compute_periodic(ffbe, square);
+            force = compute_envelope(ffbe, force);
             break;
         case SINE:
             force = compute_periodic(ffbe, sine);
+            force = compute_envelope(ffbe, force);
             break;
         case TRIANGLE:
             force = compute_periodic(ffbe, triangle);
+            force = compute_envelope(ffbe, force);
             break;
         case SAWTOOTH_UP:
             force = compute_periodic(ffbe, sawtooth_up);
+            force = compute_envelope(ffbe, force);
             break;
         case SAWTOOTH_DOWN:
             force = compute_periodic(ffbe, sawtooth_down);
+            force = compute_envelope(ffbe, force);
             break;
         case SPRING:
             force = compute_condition(ffbe, fpos);

@@ -26,7 +26,7 @@ tusb_desc_device_t const desc_device =
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
 
     .idVendor           = 0x2000,
-    .idProduct          = 0x2027,
+    .idProduct          = 0x2028,
     .bcdDevice          = 0x0100,
 
     .iManufacturer      = 0x01,
@@ -191,7 +191,7 @@ uint8_t const desc_hid_report[] =
     0x09,0x5b,                  //    Usage Attack Level
     0x09,0x5d,                  //    Usage Fade Level
     0x15,0x00,                  //    Logical Minimum 0
-    0x26,0xff,0x00,             //    Logical Maximum FFh (255d)
+    0x25,0x7f,                  //    Logical Maximum 7Fh (127d)
     0x35,0x00,                  //    Physical Minimum 0
     0x46,0x10,0x27,             //    Physical Maximum 2710h (10000d)
     0x75,0x08,                  //    Report Size 8h (8d)
@@ -206,6 +206,7 @@ uint8_t const desc_hid_report[] =
     0x35,0x00,                  //    Physical Minimum 0
     0x46,0xff,0x00,             //    Physical Maximum FFh (255d)
     0x75,0x08,                  //    Report Size 8
+    0x95,0x02,                  //    Report Count 2
     0x91,0x02,                      //    Output (Variable)
     0x45,0x00,                  //    Physical Maximum 0
     0x65,0x00,                  //    Unit 0

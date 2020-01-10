@@ -11,6 +11,7 @@
 
 #include "ffb/ffb.h"
 #include "mot/motor.h"
+#include "mot/torque.h"
 #include "usb/reports.h"
 #include "com/serial.h"
 
@@ -22,18 +23,18 @@ int main(void)
 
     serial_init();
     motor_init();
-    ffb_init();
 
     setup_ports();
+    PORT->Group[1].DIRSET.reg = (1 << 0) + (1 << 1) + (1 << 30);
 
     tusb_init();
 
     motor_enable();
-    ffb_reset();
+    torque_calibrate();
 
     printf("\n\n====== RESET ======\n");
 
-    PORT->Group[1].DIRSET.reg = (1 << 0) + (1 << 1) + (1 << 30);
+    ffb_init();
 
     for (;;) {
     	tud_task();

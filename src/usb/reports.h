@@ -53,8 +53,8 @@ struct ffb_ramp {
 } __attribute__ ((__packed__));
 
 struct ffb_envelope {
-    uint8_t  attack_level;
-    uint8_t  fade_level;
+    int8_t   attack_level;
+    int8_t   fade_level;
     uint8_t  attack_time;
     uint8_t  fade_time;
 } __attribute__ ((__packed__));

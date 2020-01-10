@@ -104,6 +104,9 @@ void setup_clocks(void)
                         GCLK_CLKCTRL_GEN_GCLK2 +
                         GCLK_CLKCTRL_ID_DAC;
     PM->APBCMASK.bit.DAC_ = 1;
+
+    /* Set the USB priority to the minimum */
+    NVIC_SetPriority(USB_IRQn, 3);
 }
 
 static inline void pin_mux_wrconfig(const int pinmux)
