@@ -22,6 +22,7 @@ src/ffb/effects.c \
 src/mot/motor.c \
 src/mot/controller.c \
 src/mot/torque.c \
+src/util.c \
 src/main.c
 
 INC = \
@@ -39,7 +40,7 @@ PREFIX = arm-none-eabi-
 CC = $(PREFIX)gcc
 SIZE = $(PREFIX)size
 CFLAGS =  -mthumb -march=armv6-m -mcpu=cortex-m0plus -nostartfiles -Werror 
-CFLAGS += -O2 -D__$(MCU)__ -DDEBUG_MODE -DPRINTF_INCLUDE_CONFIG_H
+CFLAGS += -O1 -D__$(MCU)__ -DDEBUG_MODE -DPRINTF_INCLUDE_CONFIG_H
 
 all: $(TARGET)
 

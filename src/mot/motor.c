@@ -11,7 +11,7 @@
 
 #define PWM_DT          30
 #define PWM_MIN         100
-#define ADC_SMPT        5
+#define ADC_SMPT        6
 #define ADC_LIMIT       1966
 
 #define PHASE_A_ADC_IN  4
@@ -31,6 +31,7 @@ void motor_init(void)
     TCC0->PER.bit.PER  = per;
     TCC0->CC[0].bit.CC = per/2;
     TCC0->CC[1].bit.CC = per/2;
+    TCC0->DBGCTRL.bit.FDDBD = 1;
     TCC0->WAVE.reg = TCC_WAVE_WAVEGEN_DSBOTTOM + TCC_WAVE_RAMP_RAMP1 +
                      TCC_WAVE_POL(0b1111) + TCC_WAVE_SWAP(0b1100);
     TCC0->WEXCTRL.reg = TCC_WEXCTRL_OTMX(1) + TCC_WEXCTRL_DTIEN(0xf) +

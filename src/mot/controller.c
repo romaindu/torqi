@@ -8,7 +8,7 @@
 
 #include "util.h"
 
-static const int16_t taps[2] = {5122, -5112};
+static const int16_t taps[2] = {1020, -1000};
 
 int32_t controller_compute(struct pi_controller *pic, int32_t err)
 {
