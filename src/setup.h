@@ -81,9 +81,9 @@ void setup_clocks(void)
                         GCLK_CLKCTRL_ID_TCC2_TC3;
     PM->APBCMASK.bit.TC3_ = 1;
 
-    /* ADC runs on GCLK1 (8MHz) */
+    /* ADC runs on GCLK0 (48MHz) */
     GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
-                        GCLK_CLKCTRL_GEN_GCLK1 +
+                        GCLK_CLKCTRL_GEN_GCLK0 +
                         GCLK_CLKCTRL_ID_ADC;
     PM->APBCMASK.bit.ADC_ = 1;
 

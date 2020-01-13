@@ -56,7 +56,7 @@ void motor_init(void)
     ADC->CALIB.reg = ADC_CALIB_LINEARITY_CAL(lin0 | (lin1 << 5)) +
                      ADC_CALIB_BIAS_CAL(bias);
 
-    ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV4;
+    ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV32;
     ADC->WINLT.reg = 2048 - ADC_LIMIT;
     ADC->WINUT.reg = 2048 + ADC_LIMIT;
     ADC->WINCTRL.reg = ADC_WINCTRL_WINMODE_MODE4;
@@ -85,11 +85,11 @@ void motor_init(void)
                          EVSYS_CHANNEL_PATH_ASYNCHRONOUS;
 
     /* EVENT1: ADC_WINMON -> resynchronized -> TCC0_EV0 */
-    EVSYS->USER.reg = EVSYS_USER_USER(0x04) + EVSYS_USER_CHANNEL(2);
+    /*EVSYS->USER.reg = EVSYS_USER_USER(0x04) + EVSYS_USER_CHANNEL(2);
     EVSYS->CHANNEL.reg = EVSYS_CHANNEL_CHANNEL(1) +
                          EVSYS_CHANNEL_EVGEN(0x43) +
                          EVSYS_CHANNEL_EDGSEL_RISING_EDGE +
-                         EVSYS_CHANNEL_PATH_RESYNCHRONIZED;
+                         EVSYS_CHANNEL_PATH_RESYNCHRONIZED;*/
 
     /* EIC (encoder) */
     EIC->CTRL.bit.SWRST = 1;
@@ -156,9 +156,9 @@ static uint32_t map_timer_count(int32_t pwm)
 
 void ADC_Handler(void)
 {
-    PORT->Group[1].OUTSET.reg = (1 << 0);
-
     int32_t pwm;
+
+    PORT->Group[1].OUTSET.reg = (1 << 0);
 
     ADC->INTFLAG.reg = ADC_INTFLAG_RESRDY;
 
@@ -178,7 +178,7 @@ void ADC_Handler(void)
 
 void EIC_Handler(void)
 {
-    PORT->Group[1].OUTSET.reg = (1 << 1);
+    PORT->Group[1].OUTSET.reg = (1 << 0);
 
     static uint8_t enc_state = 0;
     const int8_t enc_table[16] = {0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0};
@@ -193,5 +193,5 @@ void EIC_Handler(void)
     torque_on_encoder_count(s);
     encoder_count += s;
 
-    PORT->Group[1].OUTCLR.reg = (1 << 1);
+    PORT->Group[1].OUTCLR.reg = (1 << 0);
 }

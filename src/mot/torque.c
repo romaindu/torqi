@@ -6,14 +6,12 @@
 
 #include "torque.h"
 
-#include "printf.h"
 #include "controller.h"
 
 #define ECNT_PER_MAGREV     80
 
 static struct {
     struct pi_controller    pic[PHASES];
-    int16_t                 flux[PHASES];
     uint8_t                 phi;
     int8_t                  force;
     int8_t                  closed_loop;
@@ -45,8 +43,8 @@ static uint8_t quadrature(uint8_t phi)
 
 void torque_calibrate(void)
 {
-    torque.flux[PHASE_A] = sine[20];
-    torque.flux[PHASE_B] = sine[quadrature(20)];
+    torque.closed_loop = 0;
+    torque.phi = 20;
     torque.force = 63;
     for (uint32_t i = 0; i < 0xffffff; ++i) __asm__("nop");
     torque.force = 0;
@@ -61,24 +59,26 @@ void torque_set(int8_t force)
 
 void torque_on_encoder_count(int8_t s)
 {
-    torque.phi += s;
-
-    if (torque.phi == 255)
-        torque.phi = ECNT_PER_MAGREV-1;
-    else if (torque.phi > ECNT_PER_MAGREV-1)
-        torque.phi = 0;
-
     if (torque.closed_loop) {
-        torque.flux[PHASE_A] = sine[torque.phi];
-        torque.flux[PHASE_B] = sine[quadrature(torque.phi)];
+        torque.phi += s;
+        if (torque.phi == 255)
+            torque.phi = ECNT_PER_MAGREV-1;
+        else if (torque.phi > ECNT_PER_MAGREV-1)
+            torque.phi = 0;
     }
 }
 
 int32_t torque_on_adc_sample(int32_t ph, int32_t adc)
 {
     int32_t target;
+    uint8_t angle;
 
-    target = torque.force*torque.flux[ph] >> 11;
+    if (ph == PHASE_A)
+        angle = torque.phi;
+    else
+        angle = quadrature(torque.phi);
+
+    target = torque.force*sine[angle] >> 11;
 
     return controller_compute(&torque.pic[ph], target - adc + 2048);
 }
