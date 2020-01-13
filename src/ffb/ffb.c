@@ -15,6 +15,7 @@
 #include "mot/torque.h"
 #include "ffb/effects.h"
 #include "usb/reports.h"
+#include "whl/wheel.h"
 
 static const int32_t FFB_POSITION_COEF = 65536/ENCODER_RESOLUTION;
 static const int32_t FFB_SPEED_COEF = 8192*FFB_UPDATE_RATE/ENCODER_RESOLUTION;
@@ -296,7 +297,12 @@ void TC3_Handler(void)
     for (i = 0; i < FFB_MAX_EFFECTS; ++i)
         force += effect_compute(&pid_effects_pool[i], pos, speed);
 
+    /* Apply FFB gain */
     force = (force * ffb_gain) >> 8;
+
+    /* Add soft endstops force */
+    force += wheel_endstop_force();
+
     force = constrain(force, -127, 127);
 
     /* DAC debug FFB output */

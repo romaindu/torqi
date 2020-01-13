@@ -22,6 +22,7 @@ src/ffb/effects.c \
 src/mot/motor.c \
 src/mot/controller.c \
 src/mot/torque.c \
+src/whl/wheel.c \
 src/util.c \
 src/main.c
 
