@@ -10,14 +10,6 @@
 
 #include "ffb/ffb.h"
 
-void printmem(void const *buf, uint16_t count)
-{
-    for (int i = 0; i < count; ++i) {
-        printf("%02x ", ((char*)(buf))[i]);
-    }
-    printf("\n");
-}
-
 uint16_t tud_hid_get_report_cb(
     uint8_t report_id,
     hid_report_type_t report_type,
@@ -28,8 +20,6 @@ uint16_t tud_hid_get_report_cb(
     (void) report_type;
     (void) buffer;
     (void) reqlen;
-
-    //printf("GET REPORT ID = %d, TYPE = %d\n", report_id, report_type);
 
     if (report_type == HID_REPORT_TYPE_FEATURE) {
         if (report_id == PID_POOL_REPORT_ID) {
@@ -85,7 +75,4 @@ void tud_hid_set_report_cb(
         default:
             return;
     }
-
-    //printf("SET REPORT ID = %d, TYPE = %d\n", report_id, report_type);
-    //printmem(buffer, bufsize);
 }
