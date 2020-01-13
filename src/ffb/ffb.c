@@ -280,6 +280,8 @@ void TC3_Handler(void)
     int32_t pos, speed;
     int32_t force = 0;
 
+    PORT->Group[1].OUTSET.reg = (1 << 1);
+
     TC3->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;
 
     /* Sample the new encoder value */
@@ -302,4 +304,6 @@ void TC3_Handler(void)
     DAC->DATA.reg = (force + 128) << 2;
 
     torque_set(force);
+
+    PORT->Group[1].OUTCLR.reg = (1 << 1);
 }
