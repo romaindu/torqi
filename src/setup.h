@@ -148,4 +148,7 @@ void setup_ports(void)
 
     /* DAC for FFB debug on PA02 */
     pin_mux_wrconfig(PINMUX_PA02B_DAC_VOUT);
+
+    /* CPU usage monitoring pins */
+    PORT->Group[1].DIRSET.reg = (1 << 0) + (1 << 1);
 }
