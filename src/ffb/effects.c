@@ -9,8 +9,6 @@
 #include "util.h"
 #include "printf.h"
 
-#define FRICTION_FRACTION_OF_MAXSPEED   20
-
 static int8_t compute_ramp(struct ffb_effect *ffbe)
 {
     int32_t force, slope;
@@ -153,11 +151,6 @@ static int8_t compute_periodic(struct ffb_effect *ffbe, int8_t(*lut)(uint8_t))
     return constrain(force, -127, 127);
 }
 
-static int16_t friction(int16_t fspeed)
-{
-    return signed_saturate(fspeed*FRICTION_FRACTION_OF_MAXSPEED, 16);
-}
-
 static int8_t compute_condition(struct ffb_effect *ffbe, int32_t q)
 {
     int32_t force = 0;
@@ -224,7 +217,7 @@ int8_t effect_compute(struct ffb_effect *ffbe, int32_t fpos, int32_t fspeed)
             force = compute_condition(ffbe, fspeed);
             break;
         case FRICTION:
-            force = compute_condition(ffbe, friction(fspeed));
+            force = compute_condition(ffbe, signed_saturate(fspeed, 16));
             break;
         default:
             break;

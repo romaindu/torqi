@@ -10,6 +10,7 @@
 
 #include "sam.h"
 #include "util.h"
+#include "printf.h"
 
 #include "mot/motor.h"
 #include "mot/torque.h"
@@ -18,7 +19,7 @@
 #include "whl/wheel.h"
 
 static const int32_t FFB_POSITION_COEF = 65536/ENCODER_RESOLUTION;
-static const int32_t FFB_SPEED_COEF = 8192*FFB_UPDATE_RATE/ENCODER_RESOLUTION;
+static const int32_t FFB_SPEED_COEF = 4096*FFB_UPDATE_RATE/ENCODER_RESOLUTION;
 
 static struct ffb_effect pid_effects_pool[FFB_MAX_EFFECTS] = {0};
 
@@ -245,6 +246,7 @@ void ffb_on_device_control_report(uint8_t const *report)
             break;
         case DEVICE_RESET:
             ffb_reset();
+            motor_enable();
             break;
         case DEVICE_PAUSE:
             break;
@@ -274,19 +276,20 @@ int ffb_on_get_pid_block_load_report(uint8_t *report)
 
 void TC3_Handler(void)
 {
-    static int16_t enc_samples[8];
+    static int16_t enc_samples[16];
     static uint8_t enc_idx = 0;
-    uint8_t i;
+
     int32_t pos, speed;
     int32_t force = 0;
+    int32_t esf;
 
     PORT->Group[1].OUTSET.reg = (1 << 1);
 
     TC3->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;
 
-    /* Sample the new encoder value and compute speed on 8 samples */
-    pos   = enc_samples[enc_idx & 0x7] = motor_encoder_read();
-    speed = enc_samples[enc_idx & 0x7] - enc_samples[(enc_idx+1) & 0x7];
+    /* Sample the new encoder value and compute speed on 16 samples */
+    pos   = enc_samples[enc_idx & 0xf] = motor_encoder_read();
+    speed = enc_samples[enc_idx & 0xf] - enc_samples[(enc_idx+1) & 0xf];
     enc_idx++;
 
     /* Adjust pos and speed coefficients to full scale */
@@ -294,14 +297,15 @@ void TC3_Handler(void)
     speed = speed*FFB_SPEED_COEF;
 
     /* Compute individual effects */
-    for (i = 0; i < FFB_MAX_EFFECTS; ++i)
+    for (uint8_t i = 0; i < FFB_MAX_EFFECTS; ++i)
         force += effect_compute(&pid_effects_pool[i], pos, speed);
 
     /* Apply FFB gain */
     force = (force * ffb_gain) >> 8;
 
-    /* Add soft endstops force */
-    force += wheel_endstop_force();
+    /* Maybe overwrite with soft endstops force */
+    if (esf = wheel_endstop_force())
+        force = esf;
 
     force = constrain(force, -127, 127);
 
