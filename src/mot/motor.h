@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define ENCODER_RESOLUTION      4000
+
 void motor_init(void);
 void motor_fault(void);
 void motor_disable(void);

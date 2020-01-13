@@ -5,6 +5,9 @@
 
 #define FFB_MAX_EFFECTS     8
 
+/* Update rate should not change not to mess with FFB time units */
+#define FFB_UPDATE_RATE     1000
+
 enum effect_operation {
     EFFECT_START        = 1,
     EFFECT_START_SOLO   = 2,

@@ -10,15 +10,14 @@
 
 #include "sam.h"
 #include "util.h"
-#include "printf.h"
 
 #include "mot/motor.h"
 #include "mot/torque.h"
 #include "ffb/effects.h"
 #include "usb/reports.h"
 
-#define FFB_POSITION_COEF       5
-#define FFB_SPEED_COEF          512
+static const int32_t FFB_POSITION_COEF = 65536/ENCODER_RESOLUTION;
+static const int32_t FFB_SPEED_COEF = 8192*FFB_UPDATE_RATE/ENCODER_RESOLUTION;
 
 static struct ffb_effect pid_effects_pool[FFB_MAX_EFFECTS] = {0};
 
@@ -55,7 +54,7 @@ void ffb_init(void)
     while (TC3->COUNT16.STATUS.bit.SYNCBUSY);
 
     TC3->COUNT16.INTENSET.reg = TC_INTENSET_OVF;
-    TC3->COUNT16.CC[0].reg = 47999;
+    TC3->COUNT16.CC[0].reg = 48000000/FFB_UPDATE_RATE - 1;
     TC3->COUNT16.CTRLA.reg = TC_CTRLA_WAVEGEN_MFRQ;
     TC3->COUNT16.CTRLA.bit.ENABLE = 1;
 
@@ -284,7 +283,7 @@ void TC3_Handler(void)
 
     TC3->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;
 
-    /* Sample the new encoder value */
+    /* Sample the new encoder value and compute speed on 8 samples */
     pos   = enc_samples[enc_idx & 0x7] = motor_encoder_read();
     speed = enc_samples[enc_idx & 0x7] - enc_samples[(enc_idx+1) & 0x7];
     enc_idx++;
