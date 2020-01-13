@@ -16,6 +16,7 @@
 
 #define PHASE_A_ADC_IN  4
 #define PHASE_B_ADC_IN  5
+#define ISUPPLY_ADC_IN  6
 
 volatile int32_t encoder_count = 0;
 
@@ -85,11 +86,11 @@ void motor_init(void)
                          EVSYS_CHANNEL_PATH_ASYNCHRONOUS;
 
     /* EVENT1: ADC_WINMON -> resynchronized -> TCC0_EV0 */
-    /*EVSYS->USER.reg = EVSYS_USER_USER(0x04) + EVSYS_USER_CHANNEL(2);
+    EVSYS->USER.reg = EVSYS_USER_USER(0x04) + EVSYS_USER_CHANNEL(2);
     EVSYS->CHANNEL.reg = EVSYS_CHANNEL_CHANNEL(1) +
                          EVSYS_CHANNEL_EVGEN(0x43) +
                          EVSYS_CHANNEL_EDGSEL_RISING_EDGE +
-                         EVSYS_CHANNEL_PATH_RESYNCHRONIZED;*/
+                         EVSYS_CHANNEL_PATH_RESYNCHRONIZED;
 
     /* EIC (encoder) */
     EIC->CTRL.bit.SWRST = 1;
@@ -167,9 +168,13 @@ void ADC_Handler(void)
         TCC0->CCB[0].bit.CCB = map_timer_count(pwm);
         ADC->INPUTCTRL.bit.MUXPOS = PHASE_B_ADC_IN;
     }
-    else {
+    else if (ADC->INPUTCTRL.bit.MUXPOS == PHASE_B_ADC_IN) {
         pwm = torque_on_adc_sample(PHASE_B, ADC->RESULT.reg);
         TCC0->CCB[1].bit.CCB = map_timer_count(pwm);
+        ADC->INPUTCTRL.bit.MUXPOS = ISUPPLY_ADC_IN;
+    }
+    else if (ADC->INPUTCTRL.bit.MUXPOS == ISUPPLY_ADC_IN) {
+        (int32_t)ADC->RESULT.reg;
         ADC->INPUTCTRL.bit.MUXPOS = PHASE_A_ADC_IN;
     }
 
