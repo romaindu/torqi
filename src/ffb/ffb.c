@@ -10,7 +10,6 @@
 
 #include "sam.h"
 #include "util.h"
-#include "printf.h"
 
 #include "mot/motor.h"
 #include "mot/torque.h"
@@ -290,7 +289,7 @@ int8_t ffb_filter(int8_t force)
         acc += taps[i]*in[idx];
     }
 
-    return acc >> 15;
+    return signed_saturate(acc >> 15, 8);
 }
 
 void TC3_Handler(void)
@@ -319,7 +318,7 @@ void TC3_Handler(void)
         force += effect_compute(&pid_effects_pool[i], pos, speed);
 
     /* Apply FFB gain */
-    force = (force * ffb_gain) >> 8;
+    force =  rshift_round(force * ffb_gain, 8);
     force += wheel_endstop_force();
 
     force = constrain(force, -127, 127);
