@@ -274,6 +274,25 @@ int ffb_on_get_pid_block_load_report(uint8_t *report)
     return sizeof(struct pid_block_load_report);
 }
 
+int8_t ffb_filter(int8_t force)
+{
+    const int16_t taps[] = {-532, -1627, 1261, 9374, 14293, 9374, 1261, -1627, -532};
+
+    static int8_t in[9] = {0};
+    static int8_t idx = 0;
+
+    int32_t acc = 0;
+
+    in[idx++] = force;
+
+    for (int8_t i = 0; i < 9; ++i) {
+        idx = idx ? idx-1 : 8;
+        acc += taps[i]*in[idx];
+    }
+
+    return acc >> 15;
+}
+
 void TC3_Handler(void)
 {
     static int16_t enc_samples[16];
@@ -281,7 +300,6 @@ void TC3_Handler(void)
 
     int32_t pos, speed;
     int32_t force = 0;
-    int32_t esf;
 
     PORT->Group[1].OUTSET.reg = (1 << 1);
 
@@ -302,12 +320,10 @@ void TC3_Handler(void)
 
     /* Apply FFB gain */
     force = (force * ffb_gain) >> 8;
-
-    /* Maybe overwrite with soft endstops force */
-    if (esf = wheel_endstop_force())
-        force = esf;
+    force += wheel_endstop_force();
 
     force = constrain(force, -127, 127);
+    force = ffb_filter(force);
 
     /* DAC debug FFB output */
     DAC->DATA.reg = (force + 128) << 2;

@@ -17,7 +17,7 @@ static const int32_t DEGREES_PER_COUNT = 65536*360/ENCODER_RESOLUTION;
 
 static int16_t steering_range = 900;
 
-static inline int32_t get_wheel_angle_q16(void)
+static inline int32_t wheel_angle_q16(void)
 {
     return DEGREES_PER_COUNT*motor_encoder_read();
 }
@@ -26,7 +26,7 @@ int8_t wheel_endstop_force(void)
 {
     int32_t force, angle, lim;
 
-    angle = get_wheel_angle_q16();
+    angle = wheel_angle_q16();
     lim = (steering_range << 15);
 
     if (angle > lim)
@@ -50,7 +50,7 @@ void wheel_task(void)
         0
     };
 
-    angle = get_wheel_angle_q16();
+    angle = wheel_angle_q16();
     usb_whl_report.axis_x = signed_saturate(angle/steering_range, 16);
 
     if (tud_hid_ready()) {
