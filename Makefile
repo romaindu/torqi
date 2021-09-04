@@ -26,7 +26,6 @@ INC = \
 -Iinc/cmsis \
 -Iinc/dfp \
 -Ilib/tinyusb \
--Ilib/printf \
 -Isrc
 
 PREFIX = arm-none-eabi-
