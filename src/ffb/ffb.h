@@ -29,6 +29,8 @@ enum block_load {
     BLOCK_LOAD_ERROR    = 3,
 };
 
+extern volatile int8_t ffb_friction;
+
 void ffb_init(void);
 void ffb_reset(void);
 

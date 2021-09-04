@@ -6,31 +6,25 @@
 
 #include "setup.h"
 
-#include "printf.h"
 #include "tusb.h"
-
-#include "ffb/ffb.h"
+#include "mot/torqi.h"
 #include "mot/motor.h"
-#include "mot/torque.h"
-#include "usb/reports.h"
-#include "com/serial.h"
+#include "ffb/ffb.h"
 #include "whl/wheel.h"
 
 int main(void)
 {
     setup_clocks();
-
-    serial_init();
-    motor_init();
-
     setup_ports();
 
-    printf("\n\n====== RESET ======\n");
+    torqi_init();
+
+    while (!motor_powergood());
 
     tusb_init();
 
     motor_enable();
-    torque_calibrate();
+    torqi_calibrate();
 
     ffb_init();
 
@@ -40,4 +34,9 @@ int main(void)
     }
 
     return 0;
+}
+
+void USB_Handler(void)
+{
+    tud_int_handler(0);
 }

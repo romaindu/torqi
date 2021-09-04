@@ -7,12 +7,6 @@
 #include "tusb.h"
 #include "reports.h"
 
-enum
-{
-    ITF_NUM_HID,
-    ITF_NUM_TOTAL
-};
-
 #define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
 
 tusb_desc_device_t const desc_device =
@@ -26,7 +20,7 @@ tusb_desc_device_t const desc_device =
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
 
     .idVendor           = 0x2000,
-    .idProduct          = 0x2028,
+    .idProduct          = 0x2036,
     .bcdDevice          = 0x0100,
 
     .iManufacturer      = 0x01,
@@ -41,8 +35,7 @@ uint8_t const * tud_descriptor_device_cb(void)
     return (uint8_t const *) &desc_device;
 }
 
-uint8_t const desc_hid_report[] =
-{
+uint8_t const hid_report_desc[] = {
     /* IN 1: WHEEL REPORT */
     0x05,0x01,          //    Usage Page Generic Desktop
     0x09,0x04,          //    Usage Joystick
@@ -255,7 +248,7 @@ uint8_t const desc_hid_report[] =
     0x95,0x03,                  //    Report Count 3
     0x91,0x02,                      //    Output (Variable)
     0xc0,                   //    End Collection
-    
+
     /* OUT 4: SET PERIODIC REPORT */
     0x05,0x0f,              //    Usage Page Physical Interface
     0x09,0x6e,              //    Usage Set Effect Report
@@ -527,21 +520,34 @@ uint8_t const desc_hid_report[] =
     0xb1,0x03,                      //    Feature (Constant, Variable)
     0xc0,                   //    End Collection
 
+    /* OUTPUT 20: VENDOR DEFINED */
+    0x06,0x00,0xff,         //    Usage Page Vendor
+    0x09,0x01,              //    Usage Vendor Defined
+    0xa1,0x01,              //    Collection Application
+    0x85,VENDOR_REPORT_ID,
+    0x09,0x02,                  //    Usage
+    0x15,0x00,                  //    Logical Minimum 0h (0d)
+    0x26,0xff,0x00,             //    Logical Maximum FFh (255d)
+    0x75,0x08,                  //    Report Size (8d)
+    0x95,0x02,                  //    Report Count (2d)
+    0x91,0x02,                      //    Output (Variable)
+    0xc0,                   //    End Collection
+
     0xc0,               //    End Collection
 };
 
 uint8_t const * tud_hid_descriptor_report_cb(void)
 {
-    return desc_hid_report;
+    return (uint8_t const *) &hid_report_desc;
 }
 
 uint8_t const desc_configuration[] =
 {
     // Interface count, string index, total length, attribute, power in mA
-    TUD_CONFIG_DESCRIPTOR(ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_SELF_POWERED, 0),
+    TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_SELF_POWERED, 0),
 
     // Interface number, string index, protocol, report descriptor len, EP OUT & IN address, size & polling interval
-    TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 4, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x03, 0x83, CFG_TUD_HID_BUFSIZE, 1),
+    TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 4, HID_PROTOCOL_NONE, sizeof(hid_report_desc), 0x01, 0x81, CFG_TUD_HID_EP_BUFSIZE, 1),
 };
 
 uint8_t const * tud_descriptor_configuration_cb(uint8_t index)
@@ -556,13 +562,15 @@ char const* string_desc_arr [] =
     "Dept Industries",              // 1: Manufacturer
     "Torqi",                        // 2: Product
     "0001",                         // 3: Serials
-    "Torqi Force Feedback",         // 4: HID
+    "Torqi Force Feedback",         // 4: HID FFB
 };
 
 static uint16_t _desc_str[32];
 
-uint16_t const* tud_descriptor_string_cb(uint8_t index)
+uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 {
+    (void) langid;
+
     uint8_t chr_count;
 
     if (index == 0) {

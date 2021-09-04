@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 
-int8_t wheel_endstop_force(void);
+extern volatile int16_t steering_range;
+
 void wheel_task(void);
+int32_t wheel_endstop(int32_t force);
 
 #endif

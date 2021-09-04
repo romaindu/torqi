@@ -9,6 +9,15 @@
 #include "tusb.h"
 
 #include "ffb/ffb.h"
+#include "whl/wheel.h"
+
+void _on_set_vendor_report(uint8_t const *report)
+{
+    struct vendor_report *r = (struct vendor_report *)report;
+
+    /* Setting various globals */
+    steering_range = 5 * r->wheel_rotation;
+}
 
 uint16_t tud_hid_get_report_cb(
     uint8_t report_id,
@@ -36,7 +45,7 @@ uint16_t tud_hid_get_report_cb(
 
 void tud_hid_set_report_cb(
     uint8_t report_id,
-    hid_report_type_t report_type, 
+    hid_report_type_t report_type,
     uint8_t const* buffer,
     uint16_t bufsize)
 {
@@ -46,9 +55,11 @@ void tud_hid_set_report_cb(
     if (!buffer || !bufsize)
         return;
 
-    if (report_type == HID_REPORT_TYPE_FEATURE &&
-            report_id == CREATE_NEW_EFFECT_REPORT_ID) {
-        return ffb_on_create_new_effect_report(buffer);
+    if (report_type == HID_REPORT_TYPE_FEATURE) {
+        switch (report_id) {
+            case CREATE_NEW_EFFECT_REPORT_ID:
+                return ffb_on_create_new_effect_report(buffer);
+        }
     }
 
     switch (buffer[0]) {
@@ -72,6 +83,9 @@ void tud_hid_set_report_cb(
             return ffb_on_device_control_report(buffer);
         case PID_DEVICE_GAIN_REPORT_ID:
             return ffb_on_device_gain_report(buffer);
+
+        case VENDOR_REPORT_ID:
+            return _on_set_vendor_report(buffer);
         default:
             return;
     }

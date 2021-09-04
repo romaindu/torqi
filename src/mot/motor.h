@@ -5,12 +5,12 @@
 
 #define ENCODER_RESOLUTION      4000
 
+extern volatile int32_t motor_encoder_count;
+
 void motor_init(void);
+int  motor_powergood(void);
 void motor_fault(void);
 void motor_disable(void);
 void motor_enable(void);
-
-int32_t motor_encoder_read(void);
-void motor_encoder_write(int32_t val);
 
 #endif

@@ -28,13 +28,15 @@
 #define _TUSB_OPTION_H_
 
 #define TUSB_VERSION_MAJOR     0
-#define TUSB_VERSION_MINOR     5
+#define TUSB_VERSION_MINOR     7
 #define TUSB_VERSION_REVISION  0
 #define TUSB_VERSION_STRING    TU_STRING(TUSB_VERSION_MAJOR) "." TU_STRING(TUSB_VERSION_MINOR) "." TU_STRING(TUSB_VERSION_REVISION)
 
 /** \defgroup group_mcu Supported MCU
  * \ref CFG_TUSB_MCU must be defined to one of these
  *  @{ */
+
+#define OPT_MCU_NONE                0
 
 // LPC
 #define OPT_MCU_LPC11UXX            1 ///< NXP LPC11Uxx
@@ -53,8 +55,11 @@
 #define OPT_MCU_NRF5X             100 ///< Nordic nRF5x series
 
 // SAM
+#define OPT_MCU_SAMD11            204 ///< MicroChip SAMD11
 #define OPT_MCU_SAMD21            200 ///< MicroChip SAMD21
 #define OPT_MCU_SAMD51            201 ///< MicroChip SAMD51
+#define OPT_MCU_SAME5X            203 ///< MicroChip SAM E5x
+#define OPT_MCU_SAMG              202 ///< MicroChip SAMDG series
 
 // STM32
 #define OPT_MCU_STM32F0           300 ///< ST STM32F0
@@ -68,58 +73,83 @@
 #define OPT_MCU_STM32L1           308 ///< ST STM32L1
 #define OPT_MCU_STM32L4           309 ///< ST STM32L4
 
+// Sony
 #define OPT_MCU_CXD56             400 ///< SONY CXD56
 
+// TI MSP430
+#define OPT_MCU_MSP430x5xx        500 ///< TI MSP430x5xx
+
+// ValentyUSB eptri
 #define OPT_MCU_VALENTYUSB_EPTRI  600 ///< Fomu eptri config
 
+// NXP iMX RT
 #define OPT_MCU_MIMXRT10XX        700 ///< NXP iMX RT10xx
+
+// Nuvoton
+#define OPT_MCU_NUC121            800
+#define OPT_MCU_NUC126            801
+#define OPT_MCU_NUC120            802
+#define OPT_MCU_NUC505            803
+
+// Espressif
+#define OPT_MCU_ESP32S2           900 ///< Espressif ESP32-S2
+
+// Dialog
+#define OPT_MCU_DA1469X          1000 ///< Dialog Semiconductor DA1469x
 
 /** @} */
 
 /** \defgroup group_supported_os Supported RTOS
  *  \ref CFG_TUSB_OS must be defined to one of these
  *  @{ */
-#define OPT_OS_NONE       1 ///< No RTOS
-#define OPT_OS_FREERTOS   2 ///< FreeRTOS
-#define OPT_OS_MYNEWT     3 ///< Mynewt OS
+#define OPT_OS_NONE       1  ///< No RTOS
+#define OPT_OS_FREERTOS   2  ///< FreeRTOS
+#define OPT_OS_MYNEWT     3  ///< Mynewt OS
+#define OPT_OS_CUSTOM     4  ///< Custom OS is implemented by application
 /** @} */
 
 
 // Allow to use command line to change the config name/location
-#ifndef CFG_TUSB_CONFIG_FILE
-  #define CFG_TUSB_CONFIG_FILE "tusb_config.h"
+#ifdef CFG_TUSB_CONFIG_FILE
+  #include CFG_TUSB_CONFIG_FILE
+#else
+  #include "tusb_config.h"
 #endif
 
-#include CFG_TUSB_CONFIG_FILE
+
 
 /** \addtogroup group_configuration
  *  @{ */
 
+
 //--------------------------------------------------------------------
-// CONTROLLER
-// Only 1 roothub port can be configured to be device and/or host.
-// tinyusb does not support dual devices or dual host configuration
+// RootHub Mode Configuration
+// CFG_TUSB_RHPORTx_MODE contains operation mode and speed for that port
 //--------------------------------------------------------------------
-/** \defgroup group_mode Controller Mode Selection
- * \brief CFG_TUSB_CONTROLLER_N_MODE must be defined with these
- *  @{ */
+
+// Lower 4-bit is operational mode
 #define OPT_MODE_NONE         0x00 ///< Disabled
 #define OPT_MODE_DEVICE       0x01 ///< Device Mode
 #define OPT_MODE_HOST         0x02 ///< Host Mode
-#define OPT_MODE_HIGH_SPEED   0x10 ///< High speed
-/** @} */
+
+// Higher 4-bit is max operational speed (corresponding to tusb_speed_t)
+#define OPT_MODE_FULL_SPEED   0x00 ///< Max Full Speed
+#define OPT_MODE_LOW_SPEED    0x10 ///< Max Low Speed
+#define OPT_MODE_HIGH_SPEED   0x20 ///< Max High Speed
+
 
 #ifndef CFG_TUSB_RHPORT0_MODE
   #define CFG_TUSB_RHPORT0_MODE OPT_MODE_NONE
 #endif
 
+
 #ifndef CFG_TUSB_RHPORT1_MODE
   #define CFG_TUSB_RHPORT1_MODE OPT_MODE_NONE
 #endif
 
-#if ((CFG_TUSB_RHPORT0_MODE & OPT_MODE_HOST) && (CFG_TUSB_RHPORT1_MODE & OPT_MODE_HOST)) || \
+#if ((CFG_TUSB_RHPORT0_MODE & OPT_MODE_HOST  ) && (CFG_TUSB_RHPORT1_MODE & OPT_MODE_HOST  )) || \
     ((CFG_TUSB_RHPORT0_MODE & OPT_MODE_DEVICE) && (CFG_TUSB_RHPORT1_MODE & OPT_MODE_DEVICE))
-  #error "tinyusb does not support same modes on more than 1 roothub port"
+  #error "TinyUSB currently does not support same modes on more than 1 roothub port"
 #endif
 
 // Which roothub port is configured as host
@@ -137,7 +167,6 @@
 
 #define TUSB_OPT_DEVICE_ENABLED ( TUD_OPT_RHPORT >= 0 )
 
-
 //--------------------------------------------------------------------+
 // COMMON OPTIONS
 //--------------------------------------------------------------------+
@@ -149,15 +178,15 @@
 
 // place data in accessible RAM for usb controller
 #ifndef CFG_TUSB_MEM_SECTION
-#define CFG_TUSB_MEM_SECTION
+  #define CFG_TUSB_MEM_SECTION
 #endif
 
 #ifndef CFG_TUSB_MEM_ALIGN
-#define CFG_TUSB_MEM_ALIGN        TU_ATTR_ALIGNED(4)
+  #define CFG_TUSB_MEM_ALIGN      TU_ATTR_ALIGNED(4)
 #endif
 
 #ifndef CFG_TUSB_OS
-#define CFG_TUSB_OS               OPT_OS_NONE
+  #define CFG_TUSB_OS             OPT_OS_NONE
 #endif
 
 //--------------------------------------------------------------------
@@ -165,7 +194,7 @@
 //--------------------------------------------------------------------
 
 #ifndef CFG_TUD_ENDPOINT0_SIZE
-  #define CFG_TUD_ENDPOINT0_SIZE   64
+  #define CFG_TUD_ENDPOINT0_SIZE  64
 #endif
 
 #ifndef CFG_TUD_CDC
@@ -178,6 +207,10 @@
 
 #ifndef CFG_TUD_HID
   #define CFG_TUD_HID             0
+#endif
+
+#ifndef CFG_TUD_AUDIO
+  #define CFG_TUD_AUDIO           0
 #endif
 
 #ifndef CFG_TUD_MIDI
@@ -196,6 +229,13 @@
   #define CFG_TUD_DFU_RT          0
 #endif
 
+#ifndef CFG_TUD_NET
+  #define CFG_TUD_NET             0
+#endif
+
+#ifndef CFG_TUD_BTH
+  #define CFG_TUD_BTH             0
+#endif
 
 //--------------------------------------------------------------------
 // HOST OPTIONS

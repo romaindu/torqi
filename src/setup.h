@@ -81,11 +81,26 @@ void setup_clocks(void)
                         GCLK_CLKCTRL_ID_TCC2_TC3;
     PM->APBCMASK.bit.TC3_ = 1;
 
+    /* TC4 & TC5 run on GCLK0 (48MHz) */
+    GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
+                        GCLK_CLKCTRL_GEN_GCLK0 +
+                        GCLK_CLKCTRL_ID_TC4_TC5;
+    PM->APBCMASK.bit.TC4_ = 1;
+
     /* ADC runs on GCLK0 (48MHz) */
     GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
                         GCLK_CLKCTRL_GEN_GCLK0 +
                         GCLK_CLKCTRL_ID_ADC;
     PM->APBCMASK.bit.ADC_ = 1;
+
+    /* AC runs on 48MHz (DIG) and 32kHz (ANA) */
+    GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
+                        GCLK_CLKCTRL_GEN_GCLK0 +
+                        GCLK_CLKCTRL_ID_AC_DIG;
+    GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
+                        GCLK_CLKCTRL_GEN_GCLK2 +
+                        GCLK_CLKCTRL_ID_AC_ANA;
+    PM->APBCMASK.bit.AC_ = 1;
 
     /* EIC runs on GCLK0 (48MHz) */
     GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
@@ -99,7 +114,7 @@ void setup_clocks(void)
                         GCLK_CLKCTRL_ID_EVSYS_1;
     PM->APBCMASK.bit.EVSYS_ = 1;
 
-    /* DAC for FFB debug (32 kHz) */
+    /* DAC (32 kHz) */
     GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN +
                         GCLK_CLKCTRL_GEN_GCLK2 +
                         GCLK_CLKCTRL_ID_DAC;
@@ -109,7 +124,7 @@ void setup_clocks(void)
     NVIC_SetPriority(USB_IRQn, 3);
 }
 
-static inline void pin_mux_wrconfig(const int pinmux)
+static inline void MUXSELECT(const int pinmux)
 {
     int gr = (pinmux & 0x200000) ? 1:0;
     int co = (pinmux & 0x100000) ? PORT_WRCONFIG_HWSEL:0;
@@ -124,30 +139,32 @@ static inline void pin_mux_wrconfig(const int pinmux)
 
 void setup_ports(void)
 {
-    pin_mux_wrconfig(PINMUX_PA22C_SERCOM3_PAD0);
-    pin_mux_wrconfig(PINMUX_PA23C_SERCOM3_PAD1);
+    MUXSELECT(PINMUX_PA22C_SERCOM3_PAD0);
+    MUXSELECT(PINMUX_PA23C_SERCOM3_PAD1);
 
-    pin_mux_wrconfig(PINMUX_PA24G_USB_DM);
-    pin_mux_wrconfig(PINMUX_PA25G_USB_DP);
+    MUXSELECT(PINMUX_PA24G_USB_DM);
+    MUXSELECT(PINMUX_PA25G_USB_DP);
 
-    pin_mux_wrconfig(PINMUX_PA08E_TCC0_WO0);
-    pin_mux_wrconfig(PINMUX_PA09E_TCC0_WO1);
-    pin_mux_wrconfig(PINMUX_PA10F_TCC0_WO2);
-    pin_mux_wrconfig(PINMUX_PA11F_TCC0_WO3);
-    pin_mux_wrconfig(PINMUX_PA14F_TCC0_WO4);
-    pin_mux_wrconfig(PINMUX_PA15F_TCC0_WO5);
-    pin_mux_wrconfig(PINMUX_PA16F_TCC0_WO6);
-    pin_mux_wrconfig(PINMUX_PA17F_TCC0_WO7);
+    MUXSELECT(PINMUX_PA08E_TCC0_WO0);
+    MUXSELECT(PINMUX_PA09E_TCC0_WO1);
+    MUXSELECT(PINMUX_PA10F_TCC0_WO2);
+    MUXSELECT(PINMUX_PA11F_TCC0_WO3);
+    MUXSELECT(PINMUX_PA14F_TCC0_WO4);
+    MUXSELECT(PINMUX_PA15F_TCC0_WO5);
+    MUXSELECT(PINMUX_PA16F_TCC0_WO6);
+    MUXSELECT(PINMUX_PA17F_TCC0_WO7);
 
-    pin_mux_wrconfig(PINMUX_PA03B_ADC_AIN1);
-    pin_mux_wrconfig(PINMUX_PA04B_ADC_AIN4);
-    pin_mux_wrconfig(PINMUX_PA05B_ADC_AIN5);
+    MUXSELECT(PINMUX_PA02B_DAC_VOUT);
+    MUXSELECT(PINMUX_PA03B_ADC_AIN1);
+    MUXSELECT(PINMUX_PA04B_ADC_AIN4);
+    MUXSELECT(PINMUX_PA05B_ADC_AIN5);
+    MUXSELECT(PINMUX_PA06B_AC_AIN2);
 
-    pin_mux_wrconfig(PINMUX_PA27A_EIC_EXTINT15);
-    pin_mux_wrconfig(PINMUX_PA28A_EIC_EXTINT8);
+    MUXSELECT(PINMUX_PA18E_TC3_WO0);
+    MUXSELECT(PINMUX_PA19E_TC3_WO1);
 
-    /* DAC for FFB debug on PA02 */
-    pin_mux_wrconfig(PINMUX_PA02B_DAC_VOUT);
+    MUXSELECT(PINMUX_PA27A_EIC_EXTINT15);
+    MUXSELECT(PINMUX_PA28A_EIC_EXTINT8);
 
     /* CPU usage monitoring pins */
     PORT->Group[1].DIRSET.reg = (1 << 0) + (1 << 1);

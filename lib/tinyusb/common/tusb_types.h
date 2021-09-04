@@ -139,6 +139,7 @@ typedef enum
   TUSB_REQ_RCPT_OTHER
 } tusb_request_recipient_t;
 
+// https://www.usb.org/defined-class-codes
 typedef enum
 {
   TUSB_CLASS_UNSPECIFIED          = 0    ,
@@ -175,6 +176,12 @@ typedef enum
 {
   MISC_PROTOCOL_IAD = 1
 }misc_protocol_type_t;
+
+typedef enum
+{
+  APP_SUBCLASS_USBTMC = 0x03,
+  APP_SUBCLASS_DFU_RUNTIME = 0x01
+} app_subclass_type_t;
 
 typedef enum
 {
@@ -268,6 +275,8 @@ typedef struct TU_ATTR_PACKED
 
   uint8_t  bNumConfigurations ; ///< Number of possible configurations.
 } tusb_desc_device_t;
+
+TU_VERIFY_STATIC( sizeof(tusb_desc_device_t) == 18, "size is not correct");
 
 // USB Binary Device Object Store (BOS) Descriptor
 typedef struct TU_ATTR_PACKED
@@ -424,7 +433,7 @@ typedef struct TU_ATTR_PACKED{
   uint16_t wLength;
 } tusb_control_request_t;
 
-TU_VERIFY_STATIC( sizeof(tusb_control_request_t) == 8, "mostly compiler option issue");
+TU_VERIFY_STATIC( sizeof(tusb_control_request_t) == 8, "size is not correct");
 
 // TODO move to somewhere suitable
 static inline uint8_t bm_request_type(uint8_t direction, uint8_t type, uint8_t recipient)

@@ -7,7 +7,6 @@
 #include "effects.h"
 
 #include "util.h"
-#include "printf.h"
 
 static int8_t compute_ramp(struct ffb_effect *ffbe)
 {

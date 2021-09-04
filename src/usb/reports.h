@@ -3,37 +3,53 @@
 
 #include <stdint.h>
 
+enum
+{
+    ITF_NUM_HID = 0,
+    ITF_NUM_TOTAL
+};
+
+// Input reports
 enum {
-	WHEEL_REPORT_ID					= 1,
+    WHEEL_REPORT_ID                 = 1,
+};
+
+// Output reports
+enum {
+    SET_EFFECT_REPORT_ID            = 1,
+    SET_ENVELOPE_REPORT_ID          = 2,
+    SET_CONDITION_REPORT_ID         = 3,
+    SET_PERIODIC_REPORT_ID          = 4,
+    SET_CONSTANT_FORCE_REPORT_ID    = 5,
+    SET_RAMP_FORCE_REPORT_ID        = 6,
+    EFFECT_OPERATION_REPORT_ID      = 10,
+    PID_BLOCK_FREE_REPORT_ID        = 11,
+    PID_DEVICE_CONTROL_REPORT_ID    = 12,
+    PID_DEVICE_GAIN_REPORT_ID       = 13,
+
+    VENDOR_REPORT_ID                = 20,
+};
+
+// Feature reports
+enum {
+    CREATE_NEW_EFFECT_REPORT_ID     = 1,
+    BLOCK_LOAD_REPORT_ID            = 2,
+    PID_POOL_REPORT_ID              = 3,
 };
 
 struct wheel_report {
-	uint8_t  report_id;
-	int16_t  axis_x;
-	int16_t  axis_y;
-	uint8_t  axis_rx;
-	uint8_t  axis_ry;
-	uint8_t  axis_rz;
-	uint8_t  buttons;
+    uint8_t  report_id;
+    int16_t  axis_x;
+    int16_t  axis_y;
+    uint8_t  axis_rx;
+    uint8_t  axis_ry;
+    uint8_t  axis_rz;
+    uint8_t  buttons;
 } __attribute__ ((__packed__));
 
-enum {
-	SET_EFFECT_REPORT_ID 			= 1,
-	SET_ENVELOPE_REPORT_ID 			= 2,
-	SET_CONDITION_REPORT_ID 		= 3,
-	SET_PERIODIC_REPORT_ID 			= 4,
-	SET_CONSTANT_FORCE_REPORT_ID 	= 5,
-	SET_RAMP_FORCE_REPORT_ID 		= 6,
-	EFFECT_OPERATION_REPORT_ID 		= 10,
-	PID_BLOCK_FREE_REPORT_ID 		= 11,
-	PID_DEVICE_CONTROL_REPORT_ID 	= 12,
-	PID_DEVICE_GAIN_REPORT_ID 		= 13,
-};
-
-enum {
-	CREATE_NEW_EFFECT_REPORT_ID		= 1,
-	BLOCK_LOAD_REPORT_ID			= 2,
-	PID_POOL_REPORT_ID				= 3,
+struct vendor_report {
+    uint8_t  report_id;
+    uint8_t  wheel_rotation;
 };
 
 struct ffb_constant {
@@ -75,83 +91,83 @@ struct ffb_effect_params {
 } __attribute__ ((__packed__));
 
 struct set_effect_report {
-	uint8_t  report_id;
-	uint8_t  effect_block_index;
-	uint8_t  payload[sizeof(struct ffb_effect_params)];
-	uint8_t	 ignored[3];
+    uint8_t  report_id;
+    uint8_t  effect_block_index;
+    uint8_t  payload[sizeof(struct ffb_effect_params)];
+    uint8_t  ignored[3];
 } __attribute__ ((__packed__));
 
 struct set_envelope_report {
-	uint8_t  report_id;
-	uint8_t  effect_block_index;
-	uint8_t  payload[sizeof(struct ffb_envelope)];
+    uint8_t  report_id;
+    uint8_t  effect_block_index;
+    uint8_t  payload[sizeof(struct ffb_envelope)];
 } __attribute__ ((__packed__));
 
 struct set_condition_report {
-	uint8_t  report_id;
-	uint8_t  effect_block_index;
-	uint8_t  parameter_block_offset;
-	uint8_t  payload[sizeof(struct ffb_condition)];
+    uint8_t  report_id;
+    uint8_t  effect_block_index;
+    uint8_t  parameter_block_offset;
+    uint8_t  payload[sizeof(struct ffb_condition)];
 } __attribute__ ((__packed__));
 
 struct set_periodic_report {
-	uint8_t  report_id;
-	uint8_t  effect_block_index;
-	uint8_t  payload[sizeof(struct ffb_periodic)];
+    uint8_t  report_id;
+    uint8_t  effect_block_index;
+    uint8_t  payload[sizeof(struct ffb_periodic)];
 } __attribute__ ((__packed__));
 
 struct set_constant_force_report {
-	uint8_t  report_id;
-	uint8_t  effect_block_index;
-	uint8_t  payload[sizeof(struct ffb_constant)];
+    uint8_t  report_id;
+    uint8_t  effect_block_index;
+    uint8_t  payload[sizeof(struct ffb_constant)];
 } __attribute__ ((__packed__));
 
 struct set_ramp_force_report {
-	uint8_t  report_id;
-	uint8_t  effect_block_index;
-	uint8_t  payload[sizeof(struct ffb_ramp)];
+    uint8_t  report_id;
+    uint8_t  effect_block_index;
+    uint8_t  payload[sizeof(struct ffb_ramp)];
 } __attribute__ ((__packed__));
 
 struct effect_operation_report {
-	uint8_t  report_id;
-	uint8_t  effect_block_index;
-	uint8_t  effect_operation;
+    uint8_t  report_id;
+    uint8_t  effect_block_index;
+    uint8_t  effect_operation;
 } __attribute__ ((__packed__));
 
 struct pid_block_free_report {
-	uint8_t  report_id;
-	uint8_t  effect_block_index;
+    uint8_t  report_id;
+    uint8_t  effect_block_index;
 } __attribute__ ((__packed__));
 
 struct pid_device_control_report {
-	uint8_t  report_id;
-	uint8_t  pid_device_control;
+    uint8_t  report_id;
+    uint8_t  pid_device_control;
 } __attribute__ ((__packed__));
 
 struct device_gain_report {
-	uint8_t  report_id;
-	uint8_t  gain;
+    uint8_t  report_id;
+    uint8_t  gain;
 } __attribute__ ((__packed__));
 
 struct create_new_effect_report {
-	uint8_t  report_id;
-	uint8_t  effect_type;
+    uint8_t  report_id;
+    uint8_t  effect_type;
 } __attribute__ ((__packed__));
 
 struct pid_block_load_report {
-	uint8_t  report_id;
-	uint8_t  effect_block_index;
-	uint8_t  block_load_status;
-	uint8_t  ram_pool_available;
+    uint8_t  report_id;
+    uint8_t  effect_block_index;
+    uint8_t  block_load_status;
+    uint8_t  ram_pool_available;
 } __attribute__ ((__packed__));
 
 struct pid_pool_report {
-	uint8_t  report_id;
-	uint8_t  ram_pool_size;
-	uint8_t  simultaneous_effects;
-	uint8_t  device_managed_pool :1;
-	uint8_t  shared_parameter_block :1;
-	uint8_t  :6;
+    uint8_t  report_id;
+    uint8_t  ram_pool_size;
+    uint8_t  simultaneous_effects;
+    uint8_t  device_managed_pool :1;
+    uint8_t  shared_parameter_block :1;
+    uint8_t  :6;
 } __attribute__ ((__packed__));
 
 #endif

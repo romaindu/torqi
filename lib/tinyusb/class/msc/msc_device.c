@@ -31,6 +31,7 @@
 #include "common/tusb_common.h"
 #include "msc_device.h"
 #include "device/usbd_pvt.h"
+#include "device/dcd.h"         // for faking dcd_event_xfer_complete
 
 //--------------------------------------------------------------------+
 // MACRO CONSTANT TYPEDEF
@@ -39,7 +40,8 @@ enum
 {
   MSC_STAGE_CMD  = 0,
   MSC_STAGE_DATA,
-  MSC_STAGE_STATUS
+  MSC_STAGE_STATUS,
+  MSC_STAGE_STATUS_SENT
 };
 
 typedef struct
@@ -64,7 +66,7 @@ typedef struct
 }mscd_interface_t;
 
 CFG_TUSB_MEM_SECTION CFG_TUSB_MEM_ALIGN static mscd_interface_t _mscd_itf;
-CFG_TUSB_MEM_SECTION CFG_TUSB_MEM_ALIGN static uint8_t _mscd_buf[CFG_TUD_MSC_BUFSIZE];
+CFG_TUSB_MEM_SECTION CFG_TUSB_MEM_ALIGN static uint8_t _mscd_buf[CFG_TUD_MSC_EP_BUFSIZE];
 
 //--------------------------------------------------------------------+
 // INTERNAL OBJECT & FUNCTION DECLARATION
@@ -79,7 +81,8 @@ static inline uint32_t rdwr10_get_lba(uint8_t const command[])
 
   // copy first to prevent mis-aligned access
   uint32_t lba;
-  memcpy(&lba, &p_rdwr10->lba, 4);
+  // use offsetof to avoid pointer to the odd/misaligned address
+  memcpy(&lba, (uint8_t*) p_rdwr10 + offsetof(scsi_write10_t, lba), 4);
 
   // lba is in Big Endian format
   return tu_ntohl(lba);
@@ -92,10 +95,39 @@ static inline uint16_t rdwr10_get_blockcount(uint8_t const command[])
 
   // copy first to prevent mis-aligned access
   uint16_t block_count;
-  memcpy(&block_count, &p_rdwr10->block_count, 2);
+  // use offsetof to avoid pointer to the odd/misaligned address
+  memcpy(&block_count, (uint8_t*) p_rdwr10 + offsetof(scsi_write10_t, block_count), 2);
 
   return tu_ntohs(block_count);
 }
+
+//--------------------------------------------------------------------+
+// Debug
+//--------------------------------------------------------------------+
+#if CFG_TUSB_DEBUG >= 2
+
+static tu_lookup_entry_t const _msc_scsi_cmd_lookup[] =
+{
+  { .key = SCSI_CMD_TEST_UNIT_READY              , .data = "Test Unit Ready" },
+  { .key = SCSI_CMD_INQUIRY                      , .data = "Inquiry" },
+  { .key = SCSI_CMD_MODE_SELECT_6                , .data = "Mode_Select 6" },
+  { .key = SCSI_CMD_MODE_SENSE_6                 , .data = "Mode_Sense 6" },
+  { .key = SCSI_CMD_START_STOP_UNIT              , .data = "Start Stop Unit" },
+  { .key = SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL , .data = "Prevent Allow Medium Removal" },
+  { .key = SCSI_CMD_READ_CAPACITY_10             , .data = "Read Capacity10" },
+  { .key = SCSI_CMD_REQUEST_SENSE                , .data = "Request Sense" },
+  { .key = SCSI_CMD_READ_FORMAT_CAPACITY         , .data = "Read Format Capacity" },
+  { .key = SCSI_CMD_READ_10                      , .data = "Read10" },
+  { .key = SCSI_CMD_WRITE_10                     , .data = "Write10" }
+};
+
+static tu_lookup_table_t const _msc_scsi_cmd_table =
+{
+  .count = TU_ARRAY_SIZE(_msc_scsi_cmd_lookup),
+  .items = _msc_scsi_cmd_lookup
+};
+
+#endif
 
 //--------------------------------------------------------------------+
 // APPLICATION API
@@ -125,24 +157,33 @@ void mscd_reset(uint8_t rhport)
   tu_memclr(&_mscd_itf, sizeof(mscd_interface_t));
 }
 
-bool mscd_open(uint8_t rhport, tusb_desc_interface_t const * itf_desc, uint16_t *p_len)
+uint16_t mscd_open(uint8_t rhport, tusb_desc_interface_t const * itf_desc, uint16_t max_len)
 {
   // only support SCSI's BOT protocol
-  TU_ASSERT(MSC_SUBCLASS_SCSI == itf_desc->bInterfaceSubClass &&
-            MSC_PROTOCOL_BOT  == itf_desc->bInterfaceProtocol);
+  TU_VERIFY(TUSB_CLASS_MSC    == itf_desc->bInterfaceClass &&
+            MSC_SUBCLASS_SCSI == itf_desc->bInterfaceSubClass &&
+            MSC_PROTOCOL_BOT  == itf_desc->bInterfaceProtocol, 0);
+
+  // msc driver length is fixed
+  uint16_t const drv_len = sizeof(tusb_desc_interface_t) + 2*sizeof(tusb_desc_endpoint_t);
+
+  // Max length mus be at least 1 interface + 2 endpoints
+  TU_ASSERT(max_len >= drv_len, 0);
 
   mscd_interface_t * p_msc = &_mscd_itf;
+  p_msc->itf_num = itf_desc->bInterfaceNumber;
 
   // Open endpoint pair
-  TU_ASSERT( usbd_open_edpt_pair(rhport, tu_desc_next(itf_desc), 2, TUSB_XFER_BULK, &p_msc->ep_out, &p_msc->ep_in) );
-
-  p_msc->itf_num = itf_desc->bInterfaceNumber;
-  (*p_len) = sizeof(tusb_desc_interface_t) + 2*sizeof(tusb_desc_endpoint_t);
+  TU_ASSERT( usbd_open_edpt_pair(rhport, tu_desc_next(itf_desc), 2, TUSB_XFER_BULK, &p_msc->ep_out, &p_msc->ep_in), 0 );
 
   // Prepare for Command Block Wrapper
-  TU_ASSERT( usbd_edpt_xfer(rhport, p_msc->ep_out, (uint8_t*) &p_msc->cbw, sizeof(msc_cbw_t)) );
+  if ( !usbd_edpt_xfer(rhport, p_msc->ep_out, (uint8_t*) &p_msc->cbw, sizeof(msc_cbw_t)) )
+  {
+    TU_LOG1_FAILED();
+    TU_BREAKPOINT();
+  }
 
-  return true;
+  return drv_len;
 }
 
 // Handle class control request
@@ -378,6 +419,9 @@ bool mscd_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t event, uint32_t
       TU_ASSERT( event == XFER_RESULT_SUCCESS &&
                  xferred_bytes == sizeof(msc_cbw_t) && p_cbw->signature == MSC_CBW_SIGNATURE );
 
+      TU_LOG2("  SCSI Command: %s\r\n", tu_lookup_find(&_msc_scsi_cmd_table, p_cbw->command[0]));
+      // TU_LOG2_MEM(p_cbw, xferred_bytes, 2);
+
       p_csw->signature    = MSC_CSW_SIGNATURE;
       p_csw->tag          = p_cbw->tag;
       p_csw->data_residue = 0;
@@ -448,6 +492,9 @@ bool mscd_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t event, uint32_t
     break;
 
     case MSC_STAGE_DATA:
+      TU_LOG2("  SCSI Data\r\n");
+      //TU_LOG2_MEM(_mscd_buf, xferred_bytes, 2);
+
       // OUT transfer, invoke callback if needed
       if ( !tu_bit_test(p_cbw->dir, 7) )
       {
@@ -518,7 +565,7 @@ bool mscd_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t event, uint32_t
       else
       {
         // READ10 & WRITE10 Can be executed with large bulk of data e.g write 8K bytes (several flash write)
-        // We break it into multiple smaller command whose data size is up to CFG_TUD_MSC_BUFSIZE
+        // We break it into multiple smaller command whose data size is up to CFG_TUD_MSC_EP_BUFSIZE
         if (SCSI_CMD_READ_10 == p_cbw->command[0])
         {
           proc_read10_cmd(rhport, p_msc);
@@ -535,9 +582,16 @@ bool mscd_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t event, uint32_t
     break;
 
     case MSC_STAGE_STATUS:
-      // Wait for the command status wrapper complete event
+      // processed immediately after this switch, supposedly to be empty
+    break;
+
+    case MSC_STAGE_STATUS_SENT:
+      // Wait for the Status phase to complete
       if( (ep_addr == p_msc->ep_in) && (xferred_bytes == sizeof(msc_csw_t)) )
       {
+        TU_LOG2("  SCSI Status: %u\r\n", p_csw->status);
+        // TU_LOG2_MEM(p_csw, xferred_bytes, 2);
+
         // Move to default CMD stage
         p_msc->stage = MSC_STAGE_CMD;
 
@@ -561,10 +615,9 @@ bool mscd_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t event, uint32_t
     }
     else
     {
-      // Send SCSI Status
-      TU_ASSERT(usbd_edpt_xfer(rhport, p_msc->ep_in , (uint8_t*) &p_msc->csw, sizeof(msc_csw_t)));
-
       // Invoke complete callback if defined
+      // Note: There is racing issue with samd51 + qspi flash testing with arduino
+      // if complete_cb() is invoked after queuing the status.
       switch(p_cbw->command[0])
       {
         case SCSI_CMD_READ_10:
@@ -579,6 +632,12 @@ bool mscd_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t event, uint32_t
           if ( tud_msc_scsi_complete_cb ) tud_msc_scsi_complete_cb(p_cbw->lun, p_cbw->command);
         break;
       }
+
+      // Move to Status Sent stage
+      p_msc->stage = MSC_STAGE_STATUS_SENT;
+
+      // Send SCSI Status
+      TU_ASSERT(usbd_edpt_xfer(rhport, p_msc->ep_in , (uint8_t*) &p_msc->csw, sizeof(msc_csw_t)));
     }
   }
 

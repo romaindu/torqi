@@ -166,8 +166,13 @@ void vendord_reset(uint8_t rhport)
   }
 }
 
-bool vendord_open(uint8_t rhport, tusb_desc_interface_t const * itf_desc, uint16_t *p_len)
+uint16_t vendord_open(uint8_t rhport, tusb_desc_interface_t const * itf_desc, uint16_t max_len)
 {
+  TU_VERIFY(TUSB_CLASS_VENDOR_SPECIFIC == itf_desc->bInterfaceClass, 0);
+
+  uint16_t const drv_len = sizeof(tusb_desc_interface_t) + itf_desc->bNumEndpoints*sizeof(tusb_desc_endpoint_t);
+  TU_VERIFY(max_len >= drv_len, 0);
+
   // Find available interface
   vendord_interface_t* p_vendor = NULL;
   for(uint8_t i=0; i<CFG_TUD_VENDOR; i++)
@@ -178,18 +183,21 @@ bool vendord_open(uint8_t rhport, tusb_desc_interface_t const * itf_desc, uint16
       break;
     }
   }
-  TU_VERIFY(p_vendor);
+  TU_VERIFY(p_vendor, 0);
 
   // Open endpoint pair with usbd helper
-  TU_ASSERT(usbd_open_edpt_pair(rhport, tu_desc_next(itf_desc), 2, TUSB_XFER_BULK, &p_vendor->ep_out, &p_vendor->ep_in));
+  TU_ASSERT(usbd_open_edpt_pair(rhport, tu_desc_next(itf_desc), 2, TUSB_XFER_BULK, &p_vendor->ep_out, &p_vendor->ep_in), 0);
 
   p_vendor->itf_num = itf_desc->bInterfaceNumber;
-  (*p_len) = sizeof(tusb_desc_interface_t) + 2*sizeof(tusb_desc_endpoint_t);
 
   // Prepare for incoming data
-  TU_ASSERT(usbd_edpt_xfer(rhport, p_vendor->ep_out, p_vendor->epout_buf, sizeof(p_vendor->epout_buf)));
+  if ( !usbd_edpt_xfer(rhport, p_vendor->ep_out, p_vendor->epout_buf, sizeof(p_vendor->epout_buf)) )
+  {
+    TU_LOG1_FAILED();
+    TU_BREAKPOINT();
+  }
 
-  return true;
+  return drv_len;
 }
 
 bool vendord_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t result, uint32_t xferred_bytes)
@@ -197,9 +205,15 @@ bool vendord_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t result, uint
   (void) rhport;
   (void) result;
 
-  // TODO Support multiple interfaces
-  uint8_t const itf = 0;
-  vendord_interface_t* p_itf = &_vendord_itf[itf];
+  uint8_t itf = 0;
+  vendord_interface_t* p_itf = _vendord_itf;
+
+  for ( ; ; itf++, p_itf++)
+  {
+    if (itf >= TU_ARRAY_SIZE(_vendord_itf)) return false;
+
+    if ( ( ep_addr == p_itf->ep_out ) || ( ep_addr == p_itf->ep_in ) ) break;
+  }
 
   if ( ep_addr == p_itf->ep_out )
   {

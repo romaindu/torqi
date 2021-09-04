@@ -7,23 +7,32 @@
 #include "motor.h"
 
 #include "sam.h"
-#include "torque.h"
+#include "mot/torqi.h"
 
 #define PWM_DT          30
 #define PWM_MIN         100
-#define ADC_SMPT        6
-#define ADC_LIMIT       1966
+#define ADC_SMPT        1
+#define ADC_HARDLIMIT   1600    // 7.8 amps last chance limit
 
 #define PHASE_A_ADC_IN  4
 #define PHASE_B_ADC_IN  5
-#define ISUPPLY_ADC_IN  6
+#define VDIODE_ADC_IN   1
 
-volatile int32_t encoder_count = 0;
+volatile int32_t motor_encoder_count = 0;
 
 void motor_init(void)
 {
     uint32_t lin0, lin1, bias;
     const uint32_t per = 512;
+
+    /* DAC for midpoint (1.65V) */
+    DAC->CTRLA.bit.SWRST = 1;
+    while (DAC->STATUS.bit.SYNCBUSY);
+
+    DAC->CTRLB.reg = DAC_CTRLB_REFSEL_AVCC + DAC_CTRLB_EOEN;
+    DAC->DATA.reg = 0x200;
+    DAC->CTRLA.bit.ENABLE = 1;
+    while (DAC->STATUS.bit.SYNCBUSY);
 
     /* PWM TIMER */
     TCC0->CTRLA.bit.SWRST = 1;
@@ -34,14 +43,28 @@ void motor_init(void)
     TCC0->CC[1].bit.CC = per/2;
     TCC0->DBGCTRL.bit.FDDBD = 1;
     TCC0->WAVE.reg = TCC_WAVE_WAVEGEN_DSBOTTOM + TCC_WAVE_RAMP_RAMP1 +
-                     TCC_WAVE_POL(0b1111) + TCC_WAVE_SWAP(0b1100);
+                     TCC_WAVE_POL(0b1111) + TCC_WAVE_SWAP(0b1001);
     TCC0->WEXCTRL.reg = TCC_WEXCTRL_OTMX(1) + TCC_WEXCTRL_DTIEN(0xf) +
                         TCC_WEXCTRL_DTLS(PWM_DT) + TCC_WEXCTRL_DTHS(PWM_DT);
-    TCC0->DRVCTRL.reg = TCC_DRVCTRL_INVEN(0xf0) +
+    TCC0->DRVCTRL.reg = TCC_DRVCTRL_INVEN(0x00) +
                         TCC_DRVCTRL_NRV(0x00) + TCC_DRVCTRL_NRE(0xff);
 
     TCC0->EVCTRL.reg = TCC_EVCTRL_OVFEO +
                        TCC_EVCTRL_EVACT0_FAULT + TCC_EVCTRL_TCEI0;
+
+    /* Brake PWM */
+    TC3->COUNT16.CTRLA.bit.SWRST = 1;
+    while (TC3->COUNT16.STATUS.bit.SYNCBUSY);
+
+    TC3->COUNT8.PER.reg = 0xff;
+    TC3->COUNT8.CC[0].reg = 0;
+    TC3->COUNT8.CC[1].reg = 0xff;
+    TC3->COUNT8.DBGCTRL.bit.DBGRUN = 1;
+    TC3->COUNT8.CTRLA.reg = TC_CTRLA_MODE_COUNT8 + TC_CTRLA_PRESCALER_DIV64 + TC_CTRLA_WAVEGEN_NPWM;
+    TC3->COUNT8.CTRLBSET.reg = TC_CTRLBSET_ONESHOT;
+    TC3->COUNT8.CTRLC.reg = TC_CTRLC_INVEN(0b10);
+    TC3->COUNT8.CTRLA.bit.ENABLE = 1;
+    while (TC3->COUNT8.STATUS.bit.SYNCBUSY);
 
     /* ADC */
     ADC->CTRLA.bit.SWRST = 1;
@@ -57,14 +80,14 @@ void motor_init(void)
     ADC->CALIB.reg = ADC_CALIB_LINEARITY_CAL(lin0 | (lin1 << 5)) +
                      ADC_CALIB_BIAS_CAL(bias);
 
-    ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV32;
-    ADC->WINLT.reg = 2048 - ADC_LIMIT;
-    ADC->WINUT.reg = 2048 + ADC_LIMIT;
+    ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV32 + ADC_CTRLB_DIFFMODE;
+    ADC->WINLT.reg = -ADC_HARDLIMIT;
+    ADC->WINUT.reg = +ADC_HARDLIMIT;
     ADC->WINCTRL.reg = ADC_WINCTRL_WINMODE_MODE4;
     ADC->EVCTRL.reg = ADC_EVCTRL_STARTEI + ADC_EVCTRL_WINMONEO;
     ADC->SAMPCTRL.bit.SAMPLEN = ADC_SMPT;
-    ADC->REFCTRL.reg = ADC_REFCTRL_REFSEL_AREFA;
-    ADC->INPUTCTRL.reg = ADC_INPUTCTRL_MUXPOS_PIN4 + ADC_INPUTCTRL_MUXNEG_GND +
+    ADC->REFCTRL.reg = ADC_REFCTRL_REFSEL_INT1V;
+    ADC->INPUTCTRL.reg = ADC_INPUTCTRL_MUXPOS_PIN4 + ADC_INPUTCTRL_MUXNEG_PIN0 +
                          ADC_INPUTCTRL_GAIN_DIV2;
 
     ADC->CTRLA.bit.ENABLE = 1;
@@ -76,8 +99,9 @@ void motor_init(void)
     ADC->INTFLAG.reg = ADC_INTFLAG_RESRDY;
 
     /*Interrupt on result ready */
-    ADC->INTENSET.bit.RESRDY = 1;
     NVIC_EnableIRQ(ADC_IRQn);
+    NVIC_SetPriority(ADC_IRQn, 0);
+    ADC->INTENSET.reg = ADC_INTENSET_RESRDY;
 
     /* EVENT0: TCC0_OVF -> asynchronous -> ADC_START */
     EVSYS->USER.reg = EVSYS_USER_USER(0x17) + EVSYS_USER_CHANNEL(1);
@@ -92,6 +116,18 @@ void motor_init(void)
                          EVSYS_CHANNEL_EDGSEL_RISING_EDGE +
                          EVSYS_CHANNEL_PATH_RESYNCHRONIZED;
 
+    /* AC for power supply monitoring */
+    AC->CTRLA.bit.SWRST = 1;
+    while (AC->STATUSB.bit.SYNCBUSY);
+    AC->WINCTRL.bit.WEN0 = 1;
+    AC->COMPCTRL[0].reg = AC_COMPCTRL_ENABLE + AC_COMPCTRL_HYST +
+                          AC_COMPCTRL_MUXPOS_PIN2 + AC_COMPCTRL_MUXNEG_VSCALE;
+    AC->COMPCTRL[1].reg = AC_COMPCTRL_ENABLE + AC_COMPCTRL_HYST +
+                          AC_COMPCTRL_MUXPOS_PIN2 + AC_COMPCTRL_MUXNEG_VSCALE;
+    AC->SCALER[0].bit.VALUE = 48; // 1.5V -> 15V
+    AC->SCALER[1].bit.VALUE = 29; // 2.5V -> 35V
+    AC->CTRLA.bit.ENABLE = 1;
+
     /* EIC (encoder) */
     EIC->CTRL.bit.SWRST = 1;
     while (EIC->STATUS.bit.SYNCBUSY);
@@ -100,7 +136,13 @@ void motor_init(void)
     EIC->INTENSET.reg = EIC_INTENSET_EXTINT8 + EIC_INTENSET_EXTINT15;
     EIC->INTFLAG.reg = EIC_INTFLAG_EXTINT8 + EIC_INTFLAG_EXTINT15;
     NVIC_EnableIRQ(EIC_IRQn);
+    NVIC_SetPriority(EIC_IRQn, 0);
     EIC->CTRL.bit.ENABLE = 1;
+}
+
+int motor_powergood(void)
+{
+    return (AC->STATUSA.bit.WSTATE0 == AC_STATUSA_WSTATE0_INSIDE_Val);
 }
 
 void motor_fault(void)
@@ -125,17 +167,7 @@ void motor_enable(void)
     while (TCC0->SYNCBUSY.bit.ENABLE);
 }
 
-int32_t motor_encoder_read(void)
-{
-    return encoder_count;
-}
-
-void motor_encoder_write(int32_t val)
-{
-    encoder_count = val;
-}
-
-static uint32_t map_timer_count(int32_t pwm)
+static uint32_t _map_timer(int32_t pwm)
 {
     uint32_t u;
     uint32_t max = 512 - PWM_MIN;
@@ -155,26 +187,49 @@ static uint32_t map_timer_count(int32_t pwm)
     return u;
 }
 
+static void _brake(int32_t adc)
+{
+    static const uint8_t TCPER = 42;
+    static const int32_t BRAKE_GAIN = 4;
+
+    uint32_t u = 0;
+
+    if (adc > 0) {
+        u = BRAKE_GAIN*adc;
+    }
+
+    if (u < 0)
+        u = 0;
+    else if (u > TCPER)
+        u = TCPER;
+
+    TC3->COUNT8.PER.reg = TCPER;
+    TC3->COUNT8.CC[0].reg = u;
+    TC3->COUNT8.CC[1].reg = TCPER+1-u;
+    TC3->COUNT8.CTRLBSET.reg = TC_CTRLBSET_CMD_RETRIGGER;
+}
+
 void ADC_Handler(void)
 {
-    int32_t pwm;
+    int32_t adc, pwm;
 
     PORT->Group[1].OUTSET.reg = (1 << 0);
 
+    adc = *(int16_t*)(&ADC->RESULT.reg);
     ADC->INTFLAG.reg = ADC_INTFLAG_RESRDY;
 
     if (ADC->INPUTCTRL.bit.MUXPOS == PHASE_A_ADC_IN) {
-        pwm = torque_on_adc_sample(PHASE_A, ADC->RESULT.reg);
-        TCC0->CCB[0].bit.CCB = map_timer_count(pwm);
+        pwm = torqi_sample(PHASE_A, adc);
+        TCC0->CCB[0].bit.CCB = _map_timer(-pwm);
         ADC->INPUTCTRL.bit.MUXPOS = PHASE_B_ADC_IN;
     }
     else if (ADC->INPUTCTRL.bit.MUXPOS == PHASE_B_ADC_IN) {
-        pwm = torque_on_adc_sample(PHASE_B, ADC->RESULT.reg);
-        TCC0->CCB[1].bit.CCB = map_timer_count(pwm);
-        ADC->INPUTCTRL.bit.MUXPOS = ISUPPLY_ADC_IN;
+        pwm = torqi_sample(PHASE_B, adc);
+        TCC0->CCB[1].bit.CCB = _map_timer(pwm);
+        ADC->INPUTCTRL.bit.MUXPOS = VDIODE_ADC_IN;
     }
-    else if (ADC->INPUTCTRL.bit.MUXPOS == ISUPPLY_ADC_IN) {
-        (int32_t)ADC->RESULT.reg;
+    else { //if (ADC->INPUTCTRL.bit.MUXPOS == VDIODE_ADC_IN) {
+        _brake(adc);
         ADC->INPUTCTRL.bit.MUXPOS = PHASE_A_ADC_IN;
     }
 
@@ -186,7 +241,7 @@ void EIC_Handler(void)
     PORT->Group[1].OUTSET.reg = (1 << 0);
 
     static uint8_t enc_state = 0;
-    const int8_t enc_table[16] = {0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0};
+    const int8_t enc_table[16] = {0,1,-1,0,-1,0,0,1,1,0,0,-1,0,-1,1,0};
     int8_t s;
 
     EIC->INTFLAG.reg = EIC_INTFLAG_EXTINT8 + EIC_INTFLAG_EXTINT15;
@@ -195,8 +250,8 @@ void EIC_Handler(void)
     enc_state |= (PORT->Group[0].IN.reg & (PORT_PA27 + PORT_PA28)) >> PIN_PA27;
     s = enc_table[enc_state & 0b1111];
 
-    torque_on_encoder_count(s);
-    encoder_count += s;
+    torqi_count(s);
+    motor_encoder_count += s;
 
     PORT->Group[1].OUTCLR.reg = (1 << 0);
 }

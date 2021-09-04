@@ -12,7 +12,7 @@
 #include "util.h"
 
 #include "mot/motor.h"
-#include "mot/torque.h"
+#include "mot/torqi.h"
 #include "ffb/effects.h"
 #include "usb/reports.h"
 #include "whl/wheel.h"
@@ -21,6 +21,8 @@ static const int32_t FFB_POSITION_COEF = 65536/ENCODER_RESOLUTION;
 static const int32_t FFB_SPEED_COEF = 4096*FFB_UPDATE_RATE/ENCODER_RESOLUTION;
 
 static struct ffb_effect pid_effects_pool[FFB_MAX_EFFECTS] = {0};
+volatile int8_t ffb_friction = 40;
+volatile int8_t ffb_damper = 6;
 
 static struct pid_block_load_report block_load_report = {
     .report_id = BLOCK_LOAD_REPORT_ID,
@@ -41,32 +43,26 @@ static uint8_t ffb_gain = 0;
 
 static inline void __FFB_ENTER_CRITICAL(void)
 {
-    NVIC_DisableIRQ(TC3_IRQn);
+    NVIC_DisableIRQ(TC4_IRQn);
 }
 
 static inline void __FFB_LEAVE_CRITICAL(void)
 {
-    NVIC_EnableIRQ(TC3_IRQn);
+    NVIC_EnableIRQ(TC4_IRQn);
 }
 
 void ffb_init(void)
 {
-    TC3->COUNT16.CTRLA.bit.SWRST = 1;
-    while (TC3->COUNT16.STATUS.bit.SYNCBUSY);
+    TC4->COUNT16.CTRLA.bit.SWRST = 1;
+    while (TC4->COUNT16.STATUS.bit.SYNCBUSY);
 
-    TC3->COUNT16.INTENSET.reg = TC_INTENSET_OVF;
-    TC3->COUNT16.CC[0].reg = 48000000/FFB_UPDATE_RATE - 1;
-    TC3->COUNT16.CTRLA.reg = TC_CTRLA_WAVEGEN_MFRQ;
-    TC3->COUNT16.CTRLA.bit.ENABLE = 1;
+    TC4->COUNT16.INTENSET.reg = TC_INTENSET_OVF;
+    TC4->COUNT16.CC[0].reg = 48000000/FFB_UPDATE_RATE - 1;
+    TC4->COUNT16.CTRLA.reg = TC_CTRLA_WAVEGEN_MFRQ;
+    TC4->COUNT16.CTRLA.bit.ENABLE = 1;
 
-    DAC->CTRLA.bit.ENABLE = 1;
-    while (DAC->STATUS.bit.SYNCBUSY);
-
-    DAC->CTRLB.reg = DAC_CTRLB_REFSEL_AVCC + DAC_CTRLB_EOEN;
-    DAC->CTRLA.bit.ENABLE = 1;
-
-    NVIC_SetPriority(TC3_IRQn, 2);
-    NVIC_EnableIRQ(TC3_IRQn);
+    NVIC_SetPriority(TC4_IRQn, 2);
+    NVIC_EnableIRQ(TC4_IRQn);
 }
 
 void ffb_reset(void)
@@ -273,7 +269,7 @@ int ffb_on_get_pid_block_load_report(uint8_t *report)
     return sizeof(struct pid_block_load_report);
 }
 
-int8_t ffb_filter(int8_t force)
+static int8_t ffb_filter(int8_t force)
 {
     const int16_t taps[] = {-532, -1627, 1261, 9374, 14293, 9374, 1261, -1627, -532};
 
@@ -292,7 +288,17 @@ int8_t ffb_filter(int8_t force)
     return signed_saturate(acc >> 15, 8);
 }
 
-void TC3_Handler(void)
+static int32_t internal_effects(int32_t pos, int32_t speed)
+{
+    int32_t force;
+
+    force =  rshift_round(ffb_friction*signed_saturate(speed, 16), 15);
+    force += rshift_round(ffb_damper*speed, 15);
+
+    return force;
+}
+
+void TC4_Handler(void)
 {
     static int16_t enc_samples[16];
     static uint8_t enc_idx = 0;
@@ -302,10 +308,10 @@ void TC3_Handler(void)
 
     PORT->Group[1].OUTSET.reg = (1 << 1);
 
-    TC3->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;
+    TC4->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;
 
     /* Sample the new encoder value and compute speed on 16 samples */
-    pos   = enc_samples[enc_idx & 0xf] = motor_encoder_read();
+    pos   = enc_samples[enc_idx & 0xf] = motor_encoder_count;
     speed = enc_samples[enc_idx & 0xf] - enc_samples[(enc_idx+1) & 0xf];
     enc_idx++;
 
@@ -319,15 +325,16 @@ void TC3_Handler(void)
 
     /* Apply FFB gain */
     force =  rshift_round(force * ffb_gain, 8);
-    force += wheel_endstop_force();
+
+    /* Maybe override with endstop force */
+    force = wheel_endstop(force);
+    /* Compute internal effects */
+    force += internal_effects(pos, speed);
 
     force = constrain(force, -127, 127);
     force = ffb_filter(force);
 
-    /* DAC debug FFB output */
-    DAC->DATA.reg = (force + 128) << 2;
-
-    torque_set(force);
+    torqi_set(force);
 
     PORT->Group[1].OUTCLR.reg = (1 << 1);
 }
